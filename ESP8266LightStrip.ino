@@ -1,5 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <Adafruit_NeoPixel.h>
 
 extern "C" {
   #include "user_interface.h"
@@ -11,7 +12,10 @@ const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
 
 const uint8 NUM_MODES = 10;
-const uint8 NUM_LEDS = 5;
+const uint16 NUM_LEDS = 106;
+const bool DEBUG_HTTP = 0;
+const int LED_PIN = 2;
+
 
 struct settings {
   uint8 mode;
@@ -30,12 +34,14 @@ struct state {
   time_t fallStart;
   time_t fallStop;
   uint16 dynLevel;
+  uint32 dynFactor;
+  uint8 dynR;
+  uint8 dynG;
+  uint8 dynB;
 } state;
 
 ESP8266WebServer server(80);
-const bool DEBUG_HTTP = 0;
-long commandsSent = 0;
-const int pin = 2;
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 #define TITEL "K&uuml;chenlicht"
 
@@ -73,11 +79,38 @@ void updateState() {
   else if (state.now >= state.fallStart && state.now < state.fallStop) {
     state.dynLevel = (state.fallStop - state.now) * 256 / (state.fallStop - state.fallStart);
   }
+  state.dynFactor = state.dynLevel * settings.bri;
+  state.dynR = state.dynFactor * settings.r / 256 / 256;
+  state.dynG = state.dynFactor * settings.g / 256 / 256;
+  state.dynB = state.dynFactor * settings.b / 256 / 256;
+}
+
+void setLedsFixed(uint32_t c) {
+  for (uint16_t i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, c);  
+  }
+}
+
+void setLeds() {
+  switch (settings.mode) {
+    case 1:
+      {
+        setLedsFixed(strip.Color(state.dynR, state.dynG, state.dynB));
+      }
+      break;
+    default:
+      {
+        setLedsFixed(strip.Color(0, 0, 0));
+      }
+      break;
+  }
+  strip.show();
 }
 
 void loop() {
   server.handleClient();
   updateState();
+  setLeds();
   /*
   wifi_set_sleep_type(LIGHT_SLEEP_T);
   delay(200);*/
@@ -96,8 +129,7 @@ void sendResult(String &resp) {
 }
 
 String statusBody() {
-  String res = "<p>Commands sent: ";
-  res += commandsSent + "</p>";
+  String res("");
   if (state.riseStart || state.riseStop) {
     res += "<p>Rise time: " + String(state.riseStart - state.now) + " &rArr; " + String(state.riseStop - state.now) + "</p>";
   }
@@ -105,6 +137,9 @@ String statusBody() {
     res += "<p>Rise time: " + String(state.fallStart - state.now) + " &rArr; " + String(state.fallStop - state.now) + "</p>";
   }
   res += "<p>Dyn Level: " + String(state.dynLevel) + "</p>";
+  res += "<p>DynR: " + String(state.dynR);
+  res += "   DynG: " + String(state.dynG);
+  res += "   DynB: " + String(state.dynB) + "</p>";
   return res;
 }
 
@@ -172,9 +207,9 @@ void handleIndex() {
   sendResult(head() + formBody() + statusBody() + tail());
 }
 
+
 void handleSet() {
   extractArgs();
-  //stripSend();
   sendResult(head() + formBody() + statusBody() + "<p>sent command</p>\r\n" + tail());
 }
 
@@ -189,8 +224,10 @@ void initServer() {
 }
 
 void initLed() {
-  pinMode(pin, OUTPUT);
-  digitalWrite(pin, LOW);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+  strip.begin();
+  strip.show(); // Initialize all pixels to 'off'
 }
 
 void initSettings() {
