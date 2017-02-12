@@ -1,6 +1,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <Adafruit_NeoPixel.h>
+#include <EEPROM.h>
 
 extern "C" {
   #include "user_interface.h"
@@ -15,9 +16,10 @@ const uint8 NUM_MODES = 10;
 const uint16 NUM_LEDS = 106;
 const bool DEBUG_HTTP = 0;
 const int LED_PIN = 2;
-
+bool wiFiSetupDone = false;
 
 struct settings {
+  uint8 on;
   uint8 mode;
   uint8 r;
   uint8 g;
@@ -54,15 +56,21 @@ void initWiFi() {
   WiFi.begin(ssid, password);
   WiFi.setSleepMode(WIFI_LIGHT_SLEEP);
   
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.println("WiFi connected");
-  wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
 }
 
+void initWiFi2() {
+  if (!wiFiSetupDone) {
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("");
+      Serial.println("WiFi connected");
+      wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
+      Serial.println("initializing server\r\n");
+      initServer();
+      Serial.println("ready for commands\r\n");
+      wiFiSetupDone = true;
+    }
+  }
+}
 
 
 void updateState() {
@@ -108,7 +116,12 @@ void setLeds() {
 }
 
 void loop() {
-  server.handleClient();
+  if (wiFiSetupDone) {
+    server.handleClient();
+  }
+  else {
+    initWiFi2();
+  }
   updateState();
   setLeds();
   /*
@@ -150,7 +163,7 @@ String numInput(const char *label, const char *name, long min, long max, int val
 
 String formBody() {
   String res("<form action=\"/\" method=\"post\">");
-  res += String("<p>") + numInput("Mode", "mode", 0, NUM_MODES - 1, settings.mode) + "</p>";
+  res += String("<p>") + numInput("On", "on", 0, 1, settings.on) + numInput("Mode", "mode", 0, NUM_MODES - 1, settings.mode) + "</p>";
   res += String("<p>") + numInput("R", "red", 0, 255, settings.r);
   res +=                 numInput("G", "green", 0, 255, settings.g);
   res +=                 numInput("B", "blue", 0, 255, settings.b) + "</p>";
@@ -182,24 +195,27 @@ bool extractArgL(const char *arg, long &target) {
 }
 
 void extractArgs() {
+  bool wasOn = settings.on;
+  extractArg("on", settings.on);
   extractArg("mode", settings.mode);
   extractArg("red", settings.r);
   extractArg("green", settings.g);
   extractArg("blue", settings.b);
   extractArg("bri", settings.bri);
   time_t now = millis();
-  if (extractArgL("rise", settings.rise) && settings.rise > 0) {
-    state.riseStart = now;
-    state.riseStop = now + settings.rise;
-  }
-  if (extractArgL("fall", settings.fall) && settings.fall > 0) {
-    time_t then = now;
-    if (state.riseStop > then) {
-      then = state.riseStop;
+  extractArgL("rise", settings.rise);
+  extractArgL("fall", settings.fall);
+  if (settings.on  != wasOn) {
+    if (settings.on) {
+      state.riseStart = now;
+      state.riseStop = now + settings.rise;
     }
-    state.fallStart = then;
-    state.fallStop = then + settings.fall;
+    else {
+      state.fallStart = now;
+      state.fallStop = now + settings.fall;
+    }
   }
+  writeSettings();
 }
 
 void handleIndex() {
@@ -230,15 +246,36 @@ void initLed() {
   strip.show(); // Initialize all pixels to 'off'
 }
 
-void initSettings() {
-  settings.mode = 0;
-  settings.r = settings.g = settings.b = 0;
-  settings.bri = 0;
-  settings.rise = settings.fall = 0;
+void readSettings() {
+  EEPROM.begin(512);
+  settings.on = true;
+  settings.mode = EEPROM.read(0);
+  settings.r = EEPROM.read(1);
+  settings.g = EEPROM.read(2);
+  settings.b = EEPROM.read(3);
+  settings.bri = EEPROM.read(4);
+  EEPROM.get(8, settings.rise);
+  EEPROM.get(16, settings.fall);
+}
+
+void writeSettings() {
+  EEPROM.write(0, settings.mode);
+  EEPROM.write(1, settings.r);
+  EEPROM.write(2, settings.g);
+  EEPROM.write(3, settings.b);
+  EEPROM.write(4, settings.bri);
+  EEPROM.put(8, settings.rise);
+  EEPROM.put(16, settings.fall);
+  EEPROM.commit();
 }
 
 void initState() {
   state.dynLevel = 255;
+  state.now = millis();
+  state.riseStart = state.now;
+  state.riseStop = state.now + settings.rise;
+  state.dynLevel = 10;
+  setLeds();
 }
 
 void setup() {
@@ -246,14 +283,11 @@ void setup() {
   Serial.println();
   Serial.println();
   Serial.println("initializing LED Strip\r\n");
-  initSettings();
+  readSettings();
   initState();
   initLed();
   Serial.println("initializing WIFI\r\n");
   initWiFi();
-  Serial.println("initializing server\r\n");
-  initServer();
-  Serial.println("ready for commands\r\n");
 }
 
 
