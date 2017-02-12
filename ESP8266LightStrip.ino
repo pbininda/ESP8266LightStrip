@@ -40,6 +40,7 @@ struct state {
   uint8 dynR;
   uint8 dynG;
   uint8 dynB;
+  uint16 tick;
 } state;
 
 ESP8266WebServer server(80);
@@ -116,6 +117,7 @@ void setLeds() {
 }
 
 void loop() {
+  state.tick++;
   if (wiFiSetupDone) {
     server.handleClient();
   }
@@ -124,9 +126,10 @@ void loop() {
   }
   updateState();
   setLeds();
-  /*
-  wifi_set_sleep_type(LIGHT_SLEEP_T);
-  delay(200);*/
+  if (settings.on == 0 && state.dynFactor == 0) {
+    wifi_set_sleep_type(LIGHT_SLEEP_T);
+    delay(200);
+  }
 }
 
 String head() {
