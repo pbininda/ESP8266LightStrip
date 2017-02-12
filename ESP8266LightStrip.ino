@@ -76,22 +76,26 @@ void initWiFi2() {
 
 void updateState() {
   state.now = millis();
-  if (state.now > state.riseStop) {
-    state.riseStart = state.riseStop = 0;
+  if (settings.on) {
+    if (state.now >= state.riseStart && state.now < state.riseStop) {
+      state.dynLevel = (state.now - state.riseStart) * 256 / (state.riseStop - state.riseStart);
+    }
+    else if (state.now >= state.riseStop) {
+      state.dynLevel = 256;
+    }
   }
-  if (state.now > state.fallStop) {
-    state.fallStart = state.fallStop = 0;
-  }
-  if (state.now >= state.riseStart && state.now < state.riseStop) {
-    state.dynLevel = (state.now - state.riseStart) * 256 / (state.riseStop - state.riseStart);
-  }
-  else if (state.now >= state.fallStart && state.now < state.fallStop) {
-    state.dynLevel = (state.fallStop - state.now) * 256 / (state.fallStop - state.fallStart);
+  else {
+    if (state.now >= state.fallStart && state.now < state.fallStop) {
+      state.dynLevel = (state.fallStop - state.now) * 256 / (state.fallStop - state.fallStart);
+    }
+    else if (state.now >= state.fallStop) {
+      state.dynLevel = 0;
+    }
   }
   state.dynFactor = state.dynLevel * settings.bri;
-  state.dynR = state.dynFactor * settings.r / 256 / 256;
-  state.dynG = state.dynFactor * settings.g / 256 / 256;
-  state.dynB = state.dynFactor * settings.b / 256 / 256;
+  state.dynR = state.dynFactor * settings.r / 256 / 255;
+  state.dynG = state.dynFactor * settings.g / 256 / 255;
+  state.dynB = state.dynFactor * settings.b / 256 / 255;
 }
 
 void setLedsFixed(uint32_t c) {
@@ -102,7 +106,7 @@ void setLedsFixed(uint32_t c) {
 
 void setLeds() {
   switch (settings.mode) {
-    case 1:
+    case 0:
       {
         setLedsFixed(strip.Color(state.dynR, state.dynG, state.dynB));
       }
@@ -153,6 +157,7 @@ String statusBody() {
     res += "<p>Rise time: " + String(state.fallStart - state.now) + " &rArr; " + String(state.fallStop - state.now) + "</p>";
   }
   res += "<p>Dyn Level: " + String(state.dynLevel) + "</p>";
+  res += "<p>Dyn Factor: " + String(state.dynFactor) + "</p>";
   res += "<p>DynR: " + String(state.dynR);
   res += "   DynG: " + String(state.dynG);
   res += "   DynB: " + String(state.dynB) + "</p>";
