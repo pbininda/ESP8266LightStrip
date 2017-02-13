@@ -43,8 +43,29 @@ struct state {
   uint16 tick;
 } state;
 
+struct palette {
+  uint8 r;
+  uint8 g;
+  uint8 b;
+} palette[] = {
+  {255, 255, 255},
+  {255, 200, 120},
+  {255, 0, 0},
+  {0, 255, 0},
+  {0, 0, 255},
+  {255, 200, 0},
+  {0, 255, 200},
+  {255, 0, 200}
+};
+uint8 NUM_PALETTE = (sizeof palette) / (sizeof (struct palette));
+
+uint8 briLevels[] = {4, 16, 64, 255};
+uint8 NUM_BRILEVELS = (sizeof briLevels) / (sizeof (uint8));
+
+
+
 ESP8266WebServer server(80);
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ400);
 
 #define TITEL "K&uuml;chenlicht"
 
@@ -78,30 +99,66 @@ void updateState() {
   state.now = millis();
   if (settings.on) {
     if (state.now >= state.riseStart && state.now < state.riseStop) {
-      state.dynLevel = (state.now - state.riseStart) * 256 / (state.riseStop - state.riseStart);
+      state.dynLevel = (state.now - state.riseStart) * NUM_LEDS / (state.riseStop - state.riseStart);
     }
     else if (state.now >= state.riseStop) {
-      state.dynLevel = 256;
+      state.dynLevel = NUM_LEDS;
     }
   }
   else {
     if (state.now >= state.fallStart && state.now < state.fallStop) {
-      state.dynLevel = (state.fallStop - state.now) * 256 / (state.fallStop - state.fallStart);
+      state.dynLevel = (state.fallStop - state.now) * NUM_LEDS / (state.fallStop - state.fallStart);
     }
     else if (state.now >= state.fallStop) {
       state.dynLevel = 0;
     }
   }
-  state.dynFactor = state.dynLevel * settings.bri;
-  state.dynR = state.dynFactor * settings.r / 256 / 255;
-  state.dynG = state.dynFactor * settings.g / 256 / 255;
-  state.dynB = state.dynFactor * settings.b / 256 / 255;
+  state.dynFactor = settings.bri;
+  state.dynR = state.dynFactor * settings.r / 255;
+  state.dynG = state.dynFactor * settings.g / 255;
+  state.dynB = state.dynFactor * settings.b / 255;
 }
 
 void setLedsFixed(uint32_t c) {
-  for (uint16_t i = 0; i < strip.numPixels(); i++) {
-    strip.setPixelColor(i, c);  
+  static uint32_t lastc;
+  static uint32 lastLevel;
+  if (c != lastc || state.dynLevel != lastLevel) {
+    for (uint16_t i = 0; i < strip.numPixels(); i++) {
+      if (i < state.dynLevel) {
+        strip.setPixelColor(i, c);  
+      }
+      else {
+        strip.setPixelColor(i, 0);
+      }
+    }
+    strip.show();
+    lastc = c;
+    lastLevel = state.dynLevel;
   }
+}
+
+void setLedsZylon() {
+  const uint16 swipeTime = 5000;
+  const uint16 swipeHalfWidth = strip.numPixels() / 10;
+  const uint16 briOff = 64;
+  const uint16 swipeTimeHalf = swipeTime / 2;
+  uint16 swipeTPos = state.now % swipeTime;
+  if (swipeTPos > swipeTimeHalf) {
+    swipeTPos -= swipeTimeHalf;
+    swipeTPos = swipeTimeHalf - swipeTPos;
+  }
+  const sint16 swipePos = swipeTPos * strip.numPixels() / swipeTimeHalf;
+  uint32 cLow = strip.Color(state.dynR * briOff / 256, state.dynG * briOff / 256, state.dynB * briOff / 256);
+  uint32 cHigh = strip.Color(state.dynR, state.dynG, state.dynB);
+  for (uint16 i = 0; i < strip.numPixels(); i++) {
+    if (i < swipePos - swipeHalfWidth || i > swipePos + swipeHalfWidth) {
+      strip.setPixelColor(i, cLow);
+    }
+    else {
+      strip.setPixelColor(i, cHigh);
+    }
+  }
+  strip.show();
 }
 
 void setLeds() {
@@ -111,13 +168,17 @@ void setLeds() {
         setLedsFixed(strip.Color(state.dynR, state.dynG, state.dynB));
       }
       break;
+    case 1:
+      {
+        setLedsZylon();
+      }
+      break;
     default:
       {
         setLedsFixed(strip.Color(0, 0, 0));
       }
       break;
   }
-  strip.show();
 }
 
 void loop() {
@@ -130,10 +191,12 @@ void loop() {
   }
   updateState();
   setLeds();
-  if (settings.on == 0 && state.dynFactor == 0) {
+  if (settings.on == 0 && state.dynLevel == 0) {
     wifi_set_sleep_type(LIGHT_SLEEP_T);
     delay(200);
   }
+  delay(1);
+  yield();
 }
 
 String head() {
@@ -210,6 +273,18 @@ void extractArgs() {
   extractArg("green", settings.g);
   extractArg("blue", settings.b);
   extractArg("bri", settings.bri);
+  uint8 pal;
+  if(extractArg("pal", pal)) {
+    pal = pal % NUM_PALETTE;
+    settings.r = palette[pal].r;
+    settings.g = palette[pal].g;
+    settings.b = palette[pal].b;
+  }
+  uint8 bril;
+  if(extractArg("bril", bril)) {
+    bril = bril % NUM_BRILEVELS;
+    settings.bri = briLevels[bril];
+  }
   time_t now = millis();
   extractArgL("rise", settings.rise);
   extractArgL("fall", settings.fall);
