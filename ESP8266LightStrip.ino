@@ -49,9 +49,18 @@ ESP8266WebServer server(80);
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 #define TITEL "K&uuml;chenlicht"
+uint8_t  MAC_STA[]                = {0,0,0,0,0,0};
 
 void initWiFi() {
   // Connect to WiFi network
+  Serial.print("MAC[STA]");
+  uint8_t *MAC  = WiFi.macAddress(MAC_STA);                   //get MAC address of STA interface
+  for (int i = 0; i < sizeof(MAC)+2; ++i){
+    Serial.print(":");
+    Serial.print(MAC[i],HEX);
+    MAC_STA[i] = MAC[i];                                            //copy back to global variable
+  }
+  Serial.println();
   Serial.print("Connecting to ");
   Serial.println(ssid);
   
