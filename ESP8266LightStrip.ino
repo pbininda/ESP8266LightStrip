@@ -28,10 +28,10 @@ struct palette palette[] = {
   {0, 255, 200},
   {255, 0, 200}
 };
-uint8 NUM_PALETTE = (sizeof palette) / (sizeof (struct palette));
+uint8_t NUM_PALETTE = (sizeof palette) / (sizeof (struct palette));
 
-uint8 briLevels[] = {4, 16, 64, 255};
-uint8 NUM_BRILEVELS = (sizeof briLevels) / (sizeof (uint8));
+uint16_t briLevels[] = {4, 16, 64, 256};
+uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof (uint8));
 
 uint8_t  MAC_STA[]                = {0,0,0,0,0,0};
 
@@ -158,7 +158,7 @@ void loop() {
 }
 
 void initState() {
-  state.dynLevel = 255;
+  state.dynLevel = 256;
   state.now = millis();
   state.riseStart = state.now;
   state.riseStop = state.now + settings.rise;

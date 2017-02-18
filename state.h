@@ -7,7 +7,7 @@ extern struct settings {
   uint8_t r;
   uint8_t g;
   uint8_t b;
-  uint8_t bri;
+  uint16_t bri;
   long rise;
   long fall;
 } settings;
@@ -34,7 +34,7 @@ extern struct palette {
 } palette[];
 extern uint8_t NUM_PALETTE;
 
-extern uint8_t briLevels[];
+extern uint16_t briLevels[];
 extern uint8_t NUM_BRILEVELS;
 
 extern void updateState(uint8_t numLeds);

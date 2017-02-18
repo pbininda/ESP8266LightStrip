@@ -48,7 +48,7 @@ String formBody() {
   res += String("<p>") + numInput("R", "red", 0, 255, settings.r);
   res +=                 numInput("G", "green", 0, 255, settings.g);
   res +=                 numInput("B", "blue", 0, 255, settings.b) + "</p>";
-  res +=         "<p>" + numInput("Brightness", "bri", 0, 255, settings.bri) + "</p>";
+  res +=         "<p>" + numInput("Brightness", "bri", 0, 256, settings.bri) + "</p>";
   res +=         "<p>" + numInput("Rise", "rise", 0, 10000, settings.rise);
   res +=                 numInput("Fall", "fall", 0, 10000, settings.fall) + "</p>";
   res +=         "<button type=\"submit\">Set</button>";
@@ -58,6 +58,15 @@ String formBody() {
 }
 
 bool extractArg(const char *arg, uint8 &target) {
+  String str = server.arg(arg);
+  if (str.length() > 0) {
+    target = str.toInt();
+    return true;
+  }
+  return false;
+}
+
+bool extractArg16(const char *arg, uint16 &target) {
   String str = server.arg(arg);
   if (str.length() > 0) {
     target = str.toInt();
@@ -82,7 +91,7 @@ void extractArgs() {
   extractArg("red", settings.r);
   extractArg("green", settings.g);
   extractArg("blue", settings.b);
-  extractArg("bri", settings.bri);
+  extractArg16("bri", settings.bri);
   uint8 pal;
   if(extractArg("pal", pal)) {
     pal = pal % NUM_PALETTE;

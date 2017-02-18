@@ -23,8 +23,8 @@ void updateState(uint8_t numLeds) {
     }
   }
   state.dynFactor = settings.bri;
-  state.dynR = state.dynFactor * settings.r / 255;
-  state.dynG = state.dynFactor * settings.g / 255;
-  state.dynB = state.dynFactor * settings.b / 255;
+  state.dynR = state.dynFactor * settings.r / 256;
+  state.dynG = state.dynFactor * settings.g / 256;
+  state.dynB = state.dynFactor * settings.b / 256;
 }
 
