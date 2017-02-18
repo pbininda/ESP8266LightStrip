@@ -13,6 +13,7 @@ void readSettings() {
   EEPROM.get(4, settings.bri);
   EEPROM.get(8, settings.rise);
   EEPROM.get(16, settings.fall);
+  EEPROM.get(24, settings.cycle);
 }
 
 void writeSettings() {
@@ -23,6 +24,7 @@ void writeSettings() {
   EEPROM.put(4, settings.bri);
   EEPROM.put(8, settings.rise);
   EEPROM.put(16, settings.fall);
+  EEPROM.put(24, settings.cycle);
   EEPROM.commit();
 }
 

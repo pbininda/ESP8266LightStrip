@@ -8,8 +8,9 @@ extern struct settings {
   uint8_t g;
   uint8_t b;
   uint16_t bri;
-  long rise;
-  long fall;
+  uint32_t rise;
+  uint32_t fall;
+  uint32_t cycle;
 } settings;
 
 extern struct state {

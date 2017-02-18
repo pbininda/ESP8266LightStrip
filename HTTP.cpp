@@ -49,6 +49,7 @@ String formBody() {
   res +=                 numInput("G", "green", 0, 255, settings.g);
   res +=                 numInput("B", "blue", 0, 255, settings.b) + "</p>";
   res +=         "<p>" + numInput("Brightness", "bri", 0, 256, settings.bri) + "</p>";
+  res +=         "<p>" + numInput("Cycle", "cycle", 0, 60000, settings.cycle) + "</p>";
   res +=         "<p>" + numInput("Rise", "rise", 0, 10000, settings.rise);
   res +=                 numInput("Fall", "fall", 0, 10000, settings.fall) + "</p>";
   res +=         "<button type=\"submit\">Set</button>";
@@ -57,7 +58,7 @@ String formBody() {
   return res;
 }
 
-bool extractArg(const char *arg, uint8 &target) {
+bool extractArg8(const char *arg, uint8_t &target) {
   String str = server.arg(arg);
   if (str.length() > 0) {
     target = str.toInt();
@@ -66,7 +67,7 @@ bool extractArg(const char *arg, uint8 &target) {
   return false;
 }
 
-bool extractArg16(const char *arg, uint16 &target) {
+bool extractArg16(const char *arg, uint16_t &target) {
   String str = server.arg(arg);
   if (str.length() > 0) {
     target = str.toInt();
@@ -75,7 +76,7 @@ bool extractArg16(const char *arg, uint16 &target) {
   return false;
 }
 
-bool extractArgL(const char *arg, long &target) {
+bool extractArg32(const char *arg, uint32_t &target) {
   String str = server.arg(arg);
   if (str.length() > 0) {
     target = str.toInt();
@@ -86,27 +87,28 @@ bool extractArgL(const char *arg, long &target) {
 
 void extractArgs() {
   bool wasOn = settings.on;
-  extractArg("on", settings.on);
-  extractArg("mode", settings.mode);
-  extractArg("red", settings.r);
-  extractArg("green", settings.g);
-  extractArg("blue", settings.b);
+  extractArg8("on", settings.on);
+  extractArg8("mode", settings.mode);
+  extractArg8("red", settings.r);
+  extractArg8("green", settings.g);
+  extractArg8("blue", settings.b);
   extractArg16("bri", settings.bri);
+  extractArg32("cycle", settings.cycle);
   uint8 pal;
-  if(extractArg("pal", pal)) {
+  if(extractArg8("pal", pal)) {
     pal = pal % NUM_PALETTE;
     settings.r = palette[pal].r;
     settings.g = palette[pal].g;
     settings.b = palette[pal].b;
   }
   uint8 bril;
-  if(extractArg("bril", bril)) {
+  if(extractArg8("bril", bril)) {
     bril = bril % NUM_BRILEVELS;
     settings.bri = briLevels[bril];
   }
   time_t now = millis();
-  extractArgL("rise", settings.rise);
-  extractArgL("fall", settings.fall);
+  extractArg32("rise", settings.rise);
+  extractArg32("fall", settings.fall);
   if (settings.on  != wasOn) {
     if (settings.on) {
       state.riseStart = now;
