@@ -68,20 +68,18 @@ void initWiFi2() {
   }
 }
 
+void setDynLed(uint16_t n, uint32_t c) {
+  if (n < state.dynLevel) {
+    setLed(n, c);
+  }
+  else {
+    setLed(n, 0);
+  }
+}
+
 void setLedsFixed(uint32_t c) {
-  static uint32_t lastc;
-  static uint32 lastLevel;
-  if (c != lastc || state.dynLevel != lastLevel) {
-    for (uint16_t i = 0; i < NUM_LEDS; i++) {
-      if (i < state.dynLevel) {
-        setLed(i, c);
-      }
-      else {
-        setLed(i, 0);
-      }
-    }
-    lastc = c;
-    lastLevel = state.dynLevel;
+  for (uint16_t i = 0; i < NUM_LEDS; i++) {
+    setDynLed(i, c);
   }
 }
 
@@ -100,10 +98,10 @@ void setLedsZylon() {
   uint32 cHigh = ledColor(state.dynR, state.dynG, state.dynB);
   for (uint16 i = 0; i < NUM_LEDS; i++) {
     if (i < swipePos - swipeHalfWidth || i > swipePos + swipeHalfWidth) {
-      setLed(i, cLow);
+      setDynLed(i, cLow);
     }
     else {
-      setLed(i, cHigh);
+      setDynLed(i, cHigh);
     }
   }
 }
@@ -140,7 +138,10 @@ void loop() {
   updateState(NUM_LEDS);
   setLeds();
   handleOta();
-  if (settings.on == 0 && state.dynLevel == 0) {
+  if (getLastLedChangeDelta() > 1000) {
+    if (DEBUG_TIMING) {
+      Serial.println("no color changes => sleeping");
+    }
     wifi_set_sleep_type(LIGHT_SLEEP_T);
     delay(200);
   }

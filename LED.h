@@ -7,6 +7,7 @@ extern uint32_t ledColor(uint8_t r, uint8_t g, uint8_t b);
 extern void setLed(uint8_t n, uint8_t r, uint8_t g, uint8_t b);
 extern void setLed(uint8_t n, uint32_t c);
 extern bool sendLeds();
+extern time_t getLastLedChangeDelta();
 
 extern void initLeds();
 #endif
