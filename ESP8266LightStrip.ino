@@ -1,7 +1,7 @@
 #include <ESP8266WiFi.h>
-#include <Adafruit_NeoPixel.h>
 #include "OTA.h"
 #include "HTTP.h"
+#include "LED.h"
 #include "state.h"
 #include "persistence.h"
 
@@ -14,10 +14,8 @@ extern "C" {
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
 
-const uint16 NUM_LEDS = 106;
 const bool DEBUG_HTTP = 0;
 const bool DEBUG_TIMING = 0;
-const int LED_PIN = 2;
 bool wiFiSetupDone = false;
 
 struct palette palette[] = {
@@ -34,10 +32,6 @@ uint8 NUM_PALETTE = (sizeof palette) / (sizeof (struct palette));
 
 uint8 briLevels[] = {4, 16, 64, 255};
 uint8 NUM_BRILEVELS = (sizeof briLevels) / (sizeof (uint8));
-
-
-
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ400);
 
 uint8_t  MAC_STA[]                = {0,0,0,0,0,0};
 
@@ -79,15 +73,14 @@ void setLedsFixed(uint32_t c) {
   static uint32_t lastc;
   static uint32 lastLevel;
   if (c != lastc || state.dynLevel != lastLevel) {
-    for (uint16_t i = 0; i < strip.numPixels(); i++) {
+    for (uint16_t i = 0; i < NUM_LEDS; i++) {
       if (i < state.dynLevel) {
-        strip.setPixelColor(i, c);  
+        setLed(i, c);
       }
       else {
-        strip.setPixelColor(i, 0);
+        setLed(i, 0);
       }
     }
-    strip.show();
     lastc = c;
     lastLevel = state.dynLevel;
   }
@@ -95,7 +88,7 @@ void setLedsFixed(uint32_t c) {
 
 void setLedsZylon() {
   const uint16 swipeTime = 5000;
-  const uint16 swipeHalfWidth = strip.numPixels() / 10;
+  const uint16 swipeHalfWidth = NUM_LEDS / 10;
   const uint16 briOff = 64;
   const uint16 swipeTimeHalf = swipeTime / 2;
   uint16 swipeTPos = state.now % swipeTime;
@@ -103,25 +96,24 @@ void setLedsZylon() {
     swipeTPos -= swipeTimeHalf;
     swipeTPos = swipeTimeHalf - swipeTPos;
   }
-  const sint16 swipePos = swipeTPos * strip.numPixels() / swipeTimeHalf;
-  uint32 cLow = strip.Color(state.dynR * briOff / 256, state.dynG * briOff / 256, state.dynB * briOff / 256);
-  uint32 cHigh = strip.Color(state.dynR, state.dynG, state.dynB);
-  for (uint16 i = 0; i < strip.numPixels(); i++) {
+  const sint16 swipePos = swipeTPos * NUM_LEDS / swipeTimeHalf;
+  uint32 cLow = ledColor(state.dynR * briOff / 256, state.dynG * briOff / 256, state.dynB * briOff / 256);
+  uint32 cHigh = ledColor(state.dynR, state.dynG, state.dynB);
+  for (uint16 i = 0; i < NUM_LEDS; i++) {
     if (i < swipePos - swipeHalfWidth || i > swipePos + swipeHalfWidth) {
-      strip.setPixelColor(i, cLow);
+      setLed(i, cLow);
     }
     else {
-      strip.setPixelColor(i, cHigh);
+      setLed(i, cHigh);
     }
   }
-  strip.show();
 }
 
 void setLeds() {
   switch (settings.mode) {
     case 0:
       {
-        setLedsFixed(strip.Color(state.dynR, state.dynG, state.dynB));
+        setLedsFixed(ledColor(state.dynR, state.dynG, state.dynB));
       }
       break;
     case 1:
@@ -131,10 +123,11 @@ void setLeds() {
       break;
     default:
       {
-        setLedsFixed(strip.Color(0, 0, 0));
+        setLedsFixed(ledColor(0, 0, 0));
       }
       break;
   }
+  sendLeds();
 }
 
 void loop() {
@@ -164,13 +157,6 @@ void loop() {
   yield();
 }
 
-void initLed() {
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
-  strip.begin();
-  strip.show(); // Initialize all pixels to 'off'
-}
-
 void initState() {
   state.dynLevel = 255;
   state.now = millis();
@@ -187,7 +173,7 @@ void setup() {
   Serial.println("initializing LED Strip\r\n");
   readSettings();
   initState();
-  initLed();
+  initLeds();
   Serial.println("initializing WIFI\r\n");
   initWiFi();
 }
