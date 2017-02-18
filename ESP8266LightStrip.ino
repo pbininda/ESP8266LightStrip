@@ -1,5 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <ArduinoOTA.h>
 #include <Adafruit_NeoPixel.h>
 #include <EEPROM.h>
 
@@ -17,6 +18,7 @@ const uint16 NUM_LEDS = 106;
 const bool DEBUG_HTTP = 0;
 const int LED_PIN = 2;
 bool wiFiSetupDone = false;
+bool otaSetupDone = false;
 
 struct settings {
   uint8 on;
@@ -68,9 +70,18 @@ ESP8266WebServer server(80);
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ400);
 
 #define TITEL "K&uuml;chenlicht"
+uint8_t  MAC_STA[]                = {0,0,0,0,0,0};
 
 void initWiFi() {
   // Connect to WiFi network
+  Serial.print("MAC[STA]");
+  uint8_t *MAC  = WiFi.macAddress(MAC_STA);                   //get MAC address of STA interface
+  for (int i = 0; i < sizeof(MAC)+2; ++i){
+    Serial.print(":");
+    Serial.print(MAC[i],HEX);
+    MAC_STA[i] = MAC[i];                                            //copy back to global variable
+  }
+  Serial.println();
   Serial.print("Connecting to ");
   Serial.println(ssid);
   
@@ -89,6 +100,7 @@ void initWiFi2() {
       Serial.println("initializing server\r\n");
       initServer();
       Serial.println("ready for commands\r\n");
+      initOta();
       wiFiSetupDone = true;
     }
   }
@@ -191,6 +203,9 @@ void loop() {
   }
   updateState();
   setLeds();
+  if (otaSetupDone) {
+    ArduinoOTA.handle();
+  }
   if (settings.on == 0 && state.dynLevel == 0) {
     wifi_set_sleep_type(LIGHT_SLEEP_T);
     delay(200);
@@ -364,6 +379,46 @@ void initState() {
   state.riseStop = state.now + settings.rise;
   state.dynLevel = 10;
   setLeds();
+}
+
+void initOta() {
+  String hostname("ESP8266-OTA-");
+  hostname += String(ESP.getChipId(), HEX);
+  WiFi.hostname(hostname);
+  Serial.println("Hostname: " + hostname);
+  // Start OTA server.
+  ArduinoOTA.setHostname((const char *)hostname.c_str());
+  ArduinoOTA.setPassword((const char *)"123");
+  ArduinoOTA.onStart([]() {
+    /*
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH)
+      type = "sketch";
+    else // U_SPIFFS
+      type = "filesystem";
+
+    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+    Serial.println("Start updating " + type);
+    */
+    Serial.println("Start updating");
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
+  ArduinoOTA.begin();
+  otaSetupDone = true;
+  Serial.println("ready for OTA");
 }
 
 void setup() {
