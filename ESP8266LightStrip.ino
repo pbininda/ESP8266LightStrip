@@ -195,6 +195,11 @@ void loop() {
     wifi_set_sleep_type(LIGHT_SLEEP_T);
     delay(200);
   }
+  if (state.tick % 100 && 0) {
+    static time_t lastTickTime = 0;
+    Serial.print('tick time: ');
+    Serial.println((state.now - lastTickTime) / 100000.0);
+  }
   delay(1);
   yield();
 }
