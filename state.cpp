@@ -28,3 +28,12 @@ void updateState(uint8_t numLeds) {
   state.dynB = state.dynFactor * settings.b / 256;
 }
 
+void initState() {
+  state.dynLevel = 256;
+  state.now = millis();
+  state.riseStart = state.now;
+  state.riseStop = state.now + settings.rise;
+  state.dynLevel = 10;
+}
+
+

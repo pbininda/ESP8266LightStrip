@@ -37,6 +37,7 @@ extern uint8_t NUM_PALETTE;
 extern uint16_t briLevels[];
 extern uint8_t NUM_BRILEVELS;
 
+extern void initState();
 extern void updateState(uint8_t numLeds);
 
 #endif
