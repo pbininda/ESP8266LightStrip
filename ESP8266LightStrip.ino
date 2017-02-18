@@ -16,6 +16,7 @@ const char* password = WIFI_PASSWORD;
 const uint8 NUM_MODES = 10;
 const uint16 NUM_LEDS = 106;
 const bool DEBUG_HTTP = 0;
+const bool DEBUG_TIMING = 0;
 const int LED_PIN = 2;
 bool wiFiSetupDone = false;
 bool otaSetupDone = false;
@@ -76,7 +77,7 @@ void initWiFi() {
   // Connect to WiFi network
   Serial.print("MAC[STA]");
   uint8_t *MAC  = WiFi.macAddress(MAC_STA);                   //get MAC address of STA interface
-  for (int i = 0; i < sizeof(MAC)+2; ++i){
+  for (uint8_t i = 0; i < sizeof(MAC)+2; ++i){
     Serial.print(":");
     Serial.print(MAC[i],HEX);
     MAC_STA[i] = MAC[i];                                            //copy back to global variable
@@ -194,7 +195,7 @@ void setLeds() {
 }
 
 void loop() {
-  state.tick++;
+  static const int tickResolution = 1000;
   if (wiFiSetupDone) {
     server.handleClient();
   }
@@ -210,12 +211,15 @@ void loop() {
     wifi_set_sleep_type(LIGHT_SLEEP_T);
     delay(200);
   }
-  if (state.tick % 100 && 0) {
+  if (DEBUG_TIMING && state.tick % tickResolution == 0) {
     static time_t lastTickTime = 0;
-    Serial.print('tick time: ');
-    Serial.println((state.now - lastTickTime) / 100000.0);
+    Serial.print("tick time: ");
+    Serial.print((state.now - lastTickTime) / (tickResolution * 1.0));
+    Serial.println("ms");
+    lastTickTime = state.now;
   }
-  delay(1);
+  state.tick++;
+  delay(10);
   yield();
 }
 
@@ -388,7 +392,7 @@ void initOta() {
   Serial.println("Hostname: " + hostname);
   // Start OTA server.
   ArduinoOTA.setHostname((const char *)hostname.c_str());
-  ArduinoOTA.setPassword((const char *)"123");
+  //ArduinoOTA.setPassword((const char *)"123");
   ArduinoOTA.onStart([]() {
     /*
     String type;
