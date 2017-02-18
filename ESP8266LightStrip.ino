@@ -4,6 +4,7 @@
 #include "LED.h"
 #include "state.h"
 #include "persistence.h"
+#include "effects.h"
 
 extern "C" {
   #include "user_interface.h"
@@ -64,44 +65,6 @@ void initWiFi2() {
       Serial.println("ready for commands\r\n");
       initOta();
       wiFiSetupDone = true;
-    }
-  }
-}
-
-void setDynLed(uint16_t n, uint32_t c) {
-  if (n < state.dynLevel) {
-    setLed(n, c);
-  }
-  else {
-    setLed(n, 0);
-  }
-}
-
-void setLedsFixed(uint32_t c) {
-  for (uint16_t i = 0; i < NUM_LEDS; i++) {
-    setDynLed(i, c);
-  }
-}
-
-void setLedsZylon() {
-  const uint16 swipeTime = 5000;
-  const uint16 swipeHalfWidth = NUM_LEDS / 10;
-  const uint16 briOff = 64;
-  const uint16 swipeTimeHalf = swipeTime / 2;
-  uint16 swipeTPos = state.now % swipeTime;
-  if (swipeTPos > swipeTimeHalf) {
-    swipeTPos -= swipeTimeHalf;
-    swipeTPos = swipeTimeHalf - swipeTPos;
-  }
-  const sint16 swipePos = swipeTPos * NUM_LEDS / swipeTimeHalf;
-  uint32 cLow = ledColor(state.dynR * briOff / 256, state.dynG * briOff / 256, state.dynB * briOff / 256);
-  uint32 cHigh = ledColor(state.dynR, state.dynG, state.dynB);
-  for (uint16 i = 0; i < NUM_LEDS; i++) {
-    if (i < swipePos - swipeHalfWidth || i > swipePos + swipeHalfWidth) {
-      setDynLed(i, cLow);
-    }
-    else {
-      setDynLed(i, cHigh);
     }
   }
 }
