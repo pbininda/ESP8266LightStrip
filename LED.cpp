@@ -2,7 +2,8 @@
 #include "LED.h"
 #include "state.h"
 
-const int DEBUG_LED = 1;
+const int DEBUG_LED = 0;
+const int DEBUG_LED_NO_OUT = 0;
 const int NUM_LED_DEBUG = 32;
 const int LED_PIN = 2;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
@@ -36,7 +37,8 @@ bool sendLeds() {
     if (DEBUG_LED) {
       Serial.print("LEDs: ");
       for (uint16_t i = 0; i < NUM_LED_DEBUG; i++) {
-        Serial.print((strip.getPixelColor(i) >> 8) % 16 , HEX);
+        Serial.print(strip.getPixelColor(i) % 256 , HEX);
+        Serial.print(" ");
       }
       Serial.println();
     }
@@ -45,7 +47,7 @@ bool sendLeds() {
     return true;
   }
   else {
-    if (DEBUG_LED) {
+    if (DEBUG_LED && DEBUG_LED_NO_OUT) {
       Serial.println("No LED output");
     }
     return false;

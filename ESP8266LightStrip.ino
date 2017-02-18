@@ -14,7 +14,6 @@ extern "C" {
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
 
-const bool DEBUG_HTTP = 0;
 const bool DEBUG_TIMING = 0;
 bool wiFiSetupDone = false;
 
