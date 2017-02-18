@@ -24,6 +24,7 @@ uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof (uint8));
 
 void setLeds() {
   switch (settings.mode) {
+    default:
     case 0:
       {
         setLedsFixed(ledColor(state.dynR, state.dynG, state.dynB));
@@ -34,9 +35,9 @@ void setLeds() {
         setLedsZylon();
       }
       break;
-    default:
+    case 2:
       {
-        setLedsFixed(ledColor(0, 0, 0));
+        setLedsRainbowCycle();
       }
       break;
   }

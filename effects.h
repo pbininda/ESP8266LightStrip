@@ -4,6 +4,7 @@
 
 extern void setLedsFixed(uint32_t c);
 extern void setLedsZylon();
+extern void setLedsRainbowCycle();
 
 #endif
 

@@ -19,6 +19,11 @@ uint32_t ledColor(uint8_t r, uint8_t g, uint8_t b) {
   return Adafruit_NeoPixel::Color(r, g, b);
 }
 
+uint32_t ledBriColor(uint16_t bri, uint8_t r, uint8_t g, uint8_t b) {
+  uint32_t br = bri;
+  return Adafruit_NeoPixel::Color(r * br / 256, g * br / 256, b * br / 256);
+}
+
 void setLed(uint8_t n, uint32_t c) {
   uint32_t oldC = strip.getPixelColor(n);
   if (oldC != c) {
