@@ -42,7 +42,7 @@ uint16_t cyclePos() {
 void setLedsRainbowCycle() {
   uint32_t offset = cyclePos();
   for(uint16_t i=0; i < NUM_LEDS; i++) {
-    setDynLed(i, wheel(settings.bri, ((i + offset) * 256 / NUM_LEDS) & 255));
+    setDynLed(i, wheel(settings.bri, ((i + (offset * NUM_LEDS / 1024)) * 256 / NUM_LEDS) & 255));
   }
 }
 
