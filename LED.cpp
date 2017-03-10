@@ -105,6 +105,11 @@ bool sendLeds() {
 }
 
 void initLeds() {
+#ifdef BUS
+  Serial.println("using NeoPixelBus");
+#else
+  Serial.println("using Adafruit NeoPixel");
+#endif
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
   strip.begin();
