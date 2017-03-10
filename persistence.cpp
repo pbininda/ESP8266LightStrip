@@ -3,28 +3,65 @@
 #include "state.h"
 #include "persistence.h"
 
+struct header {
+  uint16_t magic;
+  uint16_t version;
+};
+
+struct header expectedHeader = {1, 0x1ED5};
+
+void printSettings() {
+  Serial.print("on: "); Serial.print(settings.on);
+  Serial.print("    mode: "); Serial.println(settings.mode);
+  Serial.print("r: "); Serial.print(settings.r);
+  Serial.print("    g: "); Serial.print(settings.g);
+  Serial.print("    b: "); Serial.println(settings.b);
+  Serial.print("bri: "); Serial.println(settings.bri);
+  Serial.print("rise: "); Serial.print(settings.rise);
+  Serial.print("    fall: "); Serial.println(settings.fall);
+  Serial.print("cylcle: "); Serial.println(settings.cycle);
+}
+
+void defaultSettings() {
+  settings.on = true;
+  settings.mode = 0;
+  settings.r = 255;
+  settings.g = 255;
+  settings.b = 255;
+  settings.bri = 256;
+  settings.rise = 1000;
+  settings.fall = 1000;
+  settings.cycle = 10000;
+}
+
 void readSettings() {
   EEPROM.begin(512);
-  settings.on = true;
-  settings.mode = EEPROM.read(0);
-  settings.r = EEPROM.read(1);
-  settings.g = EEPROM.read(2);
-  settings.b = EEPROM.read(3);
-  EEPROM.get(4, settings.bri);
-  EEPROM.get(8, settings.rise);
-  EEPROM.get(16, settings.fall);
-  EEPROM.get(24, settings.cycle);
+  struct header header;
+  EEPROM.get(0, header);
+  if (header.magic != expectedHeader.magic) {
+    Serial.println("header magic mismatch");
+    defaultSettings();
+    printSettings();
+    writeSettings();
+    return;
+  }
+  else if (header.version != expectedHeader.version) {
+    Serial.println("header version mismatch");
+    defaultSettings();
+    printSettings();
+    writeSettings();
+    return;
+  }
+  else {
+    EEPROM.get(sizeof(struct header), settings);
+    settings.on = true;
+    printSettings();
+  }
 }
 
 void writeSettings() {
-  EEPROM.write(0, settings.mode);
-  EEPROM.write(1, settings.r);
-  EEPROM.write(2, settings.g);
-  EEPROM.write(3, settings.b);
-  EEPROM.put(4, settings.bri);
-  EEPROM.put(8, settings.rise);
-  EEPROM.put(16, settings.fall);
-  EEPROM.put(24, settings.cycle);
+  EEPROM.put(0, expectedHeader);
+  EEPROM.put(sizeof(struct header), settings);
   EEPROM.commit();
 }
 
