@@ -2,7 +2,18 @@
 // GPIO3 UART RXD0
 //#define BUS_METHOD NeoEsp8266Dma800KbpsMethod
 // GPIO2 UART TXD1
+
+#define LEDAPA
+
+#ifdef LEDWS
 #define BUS_METHOD NeoEsp8266Uart800KbpsMethod
+#define FEATURE NeoGrbFeature
+#endif
+
+#ifdef LEDAPA
+#define BUS_METHOD DotStarSpiMethod
+#define FEATURE DotStarBgrFeature
+#endif 
 
 #ifdef BUS
 #include <NeoPixelBus.h>
@@ -17,7 +28,12 @@ const int DEBUG_LED_NO_OUT = 0;
 const int NUM_LED_DEBUG = 32;
 const int LED_PIN = 2;
 #ifdef BUS
-NeoPixelBus<NeoGrbFeature, BUS_METHOD> strip(NUM_LEDS, LED_PIN);
+#ifdef LEDWS
+NeoPixelBus<FEATURE, BUS_METHOD> strip(NUM_LEDS, LED_PIN);
+#endif
+#ifdef LEDAPA
+NeoPixelBus<FEATURE, BUS_METHOD> strip(NUM_LEDS);
+#endif
 #define canShow CanShow
 #define begin Begin
 #define show Show

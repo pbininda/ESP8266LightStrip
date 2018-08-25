@@ -23,6 +23,7 @@ void sendResult(String &resp) {
 
 String statusBody() {
   String res("");
+  res += "<p>V2</p>";
   if (state.riseStart || state.riseStop) {
     res += "<p>Rise time: " + String(state.riseStart - state.now) + " &rArr; " + String(state.riseStop - state.now) + "</p>";
   }
