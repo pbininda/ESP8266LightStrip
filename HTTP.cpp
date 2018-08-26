@@ -3,6 +3,7 @@
 #include "HTTP.h"
 #include "state.h"
 #include "persistence.h"
+#include "index.h"
 
 ESP8266WebServer server(80);
 bool serverSetupDone = false;
@@ -148,7 +149,9 @@ void handleApiGet() {
   DynamicJsonBuffer jsonBuffer;
   JsonObject &jsRoot = jsonBuffer.createObject();
   JsonObject &jsState = jsRoot.createNestedObject("state");  
-  JsonObject &jsSettings = jsRoot.createNestedObject("settings");  
+  JsonObject &jsSettings = jsRoot.createNestedObject("settings");
+  JsonArray &jsPalette = jsRoot.createNestedArray("palette");
+
   jsSettings["on"] = settings.on != 0;
   jsSettings["mode"] = settings.mode;
   jsSettings["r"] = settings.r;
@@ -170,6 +173,13 @@ void handleApiGet() {
   jsState["dynR"] = state.dynR;
   jsState["dynG"] = state.dynG;
   jsState["dynB"] = state.dynB;
+
+  for (int i = 0; i < NUM_PALETTE; i ++) {
+    JsonObject &c = jsPalette.createNestedObject();
+    c["r"] = palette[i].r;
+    c["g"] = palette[i].g;
+    c["b"] = palette[i].b;
+  }
 
   String jsonString;
   jsRoot.printTo(jsonString);
@@ -194,15 +204,54 @@ void handleApiPost() {
       Serial.println(String("on: ") + on);
       settings.on = on;
     }
+    if (jsSettings.containsKey("bri")) {
+      settings.bri = jsSettings["bri"];
+      settings.bri %= 257;
+    }
+    if (jsSettings.containsKey("r")) {
+      settings.r = jsSettings["r"];
+      settings.r %= 256;
+    }
+    if (jsSettings.containsKey("g")) {
+      settings.g = jsSettings["g"];
+      settings.g %= 256;
+    }
+    if (jsSettings.containsKey("b")) {
+      settings.b = jsSettings["b"];
+      settings.b %= 256;
+    }
+    if (jsSettings.containsKey("pal")) {
+      uint32 pal = jsSettings["pal"];
+      pal = pal % NUM_PALETTE;
+      settings.r = palette[pal].r;
+      settings.g = palette[pal].g;
+      settings.b = palette[pal].b;    
+    }
+    if (jsSettings.containsKey("mode")) {
+      settings.mode = jsSettings["mode"];
+    }
   }
   sendJsonResult("\"OK\"");
   processSettings(wasOn);
 }
 
+String index() {
+  String res(HTTP_MAIN);
+  return res;
+}
+
+void handleSpa() {
+  extractArgs();
+  String indexData = index();
+  sendResult(indexData);
+}
+
+
 void initServer() {
   // Start the server
   server.on("/", HTTP_GET, handleIndex);
   server.on("/", HTTP_POST, handleSet);
+  server.on("/spa", HTTP_GET, handleSpa);
   server.on("/switch", HTTP_GET, handleSet);
   server.on("/api", HTTP_GET, handleApiGet);
   server.on("/api", HTTP_POST, handleApiPost);
