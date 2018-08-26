@@ -1,4 +1,5 @@
 #include <ESP8266WebServer.h>
+#include <ArduinoJson.h>
 #include "HTTP.h"
 #include "state.h"
 #include "persistence.h"
@@ -20,6 +21,11 @@ String tail() {
 void sendResult(String &resp) {
   server.send(200, "text/html", resp);
 }
+
+void sendJsonResult(String resp) {
+  server.send(200, "application/json", resp);
+}
+
 
 String statusBody() {
   String res("");
@@ -86,6 +92,21 @@ bool extractArg32(const char *arg, uint32_t &target) {
   return false;
 }
 
+void processSettings(bool wasOn) {
+  time_t now = millis();
+  if (settings.on  != wasOn) {
+    if (settings.on) {
+      state.riseStart = now;
+      state.riseStop = now + settings.rise;
+    }
+    else {
+      state.fallStart = now;
+      state.fallStop = now + settings.fall;
+    }
+  }
+  writeSettings();
+}
+
 void extractArgs() {
   bool wasOn = settings.on;
   extractArg8("on", settings.on);
@@ -107,20 +128,9 @@ void extractArgs() {
     bril = bril % NUM_BRILEVELS;
     settings.bri = briLevels[bril];
   }
-  time_t now = millis();
   extractArg32("rise", settings.rise);
   extractArg32("fall", settings.fall);
-  if (settings.on  != wasOn) {
-    if (settings.on) {
-      state.riseStart = now;
-      state.riseStop = now + settings.rise;
-    }
-    else {
-      state.fallStart = now;
-      state.fallStop = now + settings.fall;
-    }
-  }
-  writeSettings();
+  processSettings(wasOn);
 }
 
 void handleIndex() {
@@ -134,12 +144,68 @@ void handleSet() {
   sendResult(head() + formBody() + statusBody() + "<p>sent command</p>\r\n" + tail());
 }
 
+void handleApiGet() {
+  DynamicJsonBuffer jsonBuffer;
+  JsonObject &jsRoot = jsonBuffer.createObject();
+  JsonObject &jsState = jsRoot.createNestedObject("state");  
+  JsonObject &jsSettings = jsRoot.createNestedObject("settings");  
+  jsSettings["on"] = settings.on != 0;
+  jsSettings["mode"] = settings.mode;
+  jsSettings["r"] = settings.r;
+  jsSettings["g"] = settings.g;
+  jsSettings["b"] = settings.b;
+  jsSettings["bri"] = settings.bri;
+  jsSettings["cycle"] = settings.cycle;
+  jsSettings["rise"] = settings.rise;
+  jsSettings["fall"] = settings.fall;
+  
+  jsState["riseStart"] = state.riseStart;
+  jsState["riseStop"] = state.riseStop;
+  jsState["fallStart"] = state.fallStart;
+  jsState["fallStop"] = state.fallStop;
+  jsState["tick"] = state.tick;
+  jsState["now"] = state.now;
+  jsState["dynLevel"] = state.dynLevel;
+  jsState["dynFactor"] = state.dynFactor;
+  jsState["dynR"] = state.dynR;
+  jsState["dynG"] = state.dynG;
+  jsState["dynB"] = state.dynB;
+
+  String jsonString;
+  jsRoot.printTo(jsonString);
+  // Serial.println(jsonString);
+  sendJsonResult(jsonString);
+}
+
+void handleApiPost() {
+  Serial.println("got post");
+  bool wasOn = settings.on;
+  DynamicJsonBuffer jsonBuffer;
+  String jsonString(server.arg("plain"));
+  Serial.print("POST: ");
+  Serial.println(jsonString);
+  JsonObject &root = jsonBuffer.parseObject(jsonString);
+  if (root.success()) {
+    // Serial.println("root success");
+    // JsonObject &jsState = root["state"];
+    JsonObject &jsSettings = root["settings"];
+    if (jsSettings.containsKey("on")) {
+      bool on = jsSettings["on"];
+      Serial.println(String("on: ") + on);
+      settings.on = on;
+    }
+  }
+  sendJsonResult("\"OK\"");
+  processSettings(wasOn);
+}
 
 void initServer() {
   // Start the server
   server.on("/", HTTP_GET, handleIndex);
   server.on("/", HTTP_POST, handleSet);
   server.on("/switch", HTTP_GET, handleSet);
+  server.on("/api", HTTP_GET, handleApiGet);
+  server.on("/api", HTTP_POST, handleApiPost);
   server.begin();
   serverSetupDone = true;
   Serial.print("Server started on ");
