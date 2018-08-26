@@ -11,12 +11,13 @@
 #endif
 
 #ifdef LEDAPA
-#define BUS_METHOD DotStarSpiMethod
+#define BUS_METHOD DotStarSpiMethod2
 #define FEATURE DotStarBgrFeature
 #endif 
 
 #ifdef BUS
 #include <NeoPixelBus.h>
+#include "DotStarSpiMethod2.h"
 #else
 #include <Adafruit_NeoPixel.h>
 #endif
@@ -29,16 +30,16 @@ const int NUM_LED_DEBUG = 32;
 const int LED_PIN = 2;
 #ifdef BUS
 #ifdef LEDWS
-NeoPixelBus<FEATURE, BUS_METHOD> strip(NUM_LEDS, LED_PIN);
+NeoPixelBus<FEATURE, BUS_METHOD> strip(NUM_LEDS + 1, LED_PIN);
 #endif
 #ifdef LEDAPA
-NeoPixelBus<FEATURE, BUS_METHOD> strip(NUM_LEDS);
+NeoPixelBus<FEATURE, BUS_METHOD> strip(NUM_LEDS + 1);
 #endif
 #define canShow CanShow
 #define begin Begin
 #define show Show
 #else
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS + 1, LED_PIN, NEO_GRB + NEO_KHZ800);
 #endif
 
 bool ledsChanged = false;
@@ -108,6 +109,7 @@ bool sendLeds() {
       }
       Serial.println();
     }
+    setLed(NUM_LEDS, 0, 0, 0);
     strip.show();
     ledsChanged = false;
     return true;
