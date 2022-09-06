@@ -21,10 +21,10 @@ uint32_t wheel(uint16_t bri, uint8_t wheelPos) {
 
 void setDynLed(uint16_t n, uint32_t c) {
   if (n < state.dynLevel) {
-    setLed(n, c);
+    setLedc(n, c);
   }
   else {
-    setLed(n, 0);
+    setLedc(n, 0);
   }
 }
 
@@ -42,21 +42,21 @@ uint16_t cyclePos() {
 void setLedsRainbowCycle() {
   uint32_t offset = cyclePos();
   for(uint16_t i=0; i < NUM_LEDS; i++) {
-    setDynLed(i, wheel(settings.bri, ((i + (offset * NUM_LEDS / 1024)) * 256 / NUM_LEDS) & 255));
+    setDynLed(i, wheel(settings.bri2, ((i + (offset * NUM_LEDS / 1024)) * 256 / NUM_LEDS) & 255));
   }
 }
 
 void setLedsZylon() {
   const uint16_t swipeHalfWidth = NUM_LEDS / 10;
-  const uint16_t briOff = 64;
+  const uint16_t briOff = 8;
   uint16_t swipeTPos = cyclePos();
   if (swipeTPos > 512) {
     swipeTPos -= 512;
     swipeTPos = 512 - swipeTPos;
   }
   const int16_t swipePos = swipeTPos * NUM_LEDS / 512;
-  uint32_t cLow = ledColor(state.dynR * briOff / 256, state.dynG * briOff / 256, state.dynB * briOff / 256);
-  uint32_t cHigh = ledColor(state.dynR, state.dynG, state.dynB);
+  uint32_t cLow = ledColor(state.dynR, state.dynG, state.dynB, briOff);
+  uint32_t cHigh = ledColor(state.dynR, state.dynG, state.dynB, 31);
   for (uint16_t i = 0; i < NUM_LEDS; i++) {
     if (i < swipePos - swipeHalfWidth || i > swipePos + swipeHalfWidth) {
       setDynLed(i, cLow);
@@ -66,5 +66,3 @@ void setLedsZylon() {
     }
   }
 }
-
-

@@ -27,7 +27,7 @@ void setLeds() {
     default:
     case 0:
       {
-        setLedsFixed(ledColor(state.dynR, state.dynG, state.dynB));
+        setLedsFixed(ledColor(state.dynR, state.dynG, state.dynB, settings.bri2));
       }
       break;
     case 1:

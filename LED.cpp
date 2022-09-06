@@ -1,9 +1,11 @@
 #define BUS
 // GPIO3 UART RXD0
-//#define BUS_METHOD NeoEsp8266Dma800KbpsMethod
+//#define BUS_METHOD NeoEsp8266Dma10MbpsMethod
 // GPIO2 UART TXD1
 
 #define LEDAPA
+
+#define BRIGHTNESS (0xE0 | 0)
 
 #ifdef LEDWS
 #define BUS_METHOD NeoEsp8266Uart800KbpsMethod
@@ -11,20 +13,16 @@
 #endif
 
 #ifdef LEDAPA
-#define BUS_METHOD DotStarSpiMethod2
-#define FEATURE DotStarBgrFeature
+#define BUS_METHOD DotStarMethod
+#define FEATURE DotStarLbgrFeature
 #endif 
 
-#ifdef BUS
 #include <NeoPixelBus.h>
-#include "DotStarSpiMethod2.h"
-#else
-#include <Adafruit_NeoPixel.h>
-#endif
+// #include "DotStarSpiMethod2.h"
 #include "LED.h"
 #include "state.h"
 
-const int DEBUG_LED = 0;
+const int DEBUG_LED = 1;
 const int DEBUG_LED_NO_OUT = 0;
 const int NUM_LED_DEBUG = 32;
 const int LED_PIN = 2;
@@ -49,58 +47,57 @@ time_t getLastLedChangeDelta() {
   return state.now - lastLedChange;
 }
 
-#ifdef BUS
-uint32_t ledColor(uint8_t r, uint8_t g, uint8_t b) {
-  return (((r << 8) | g) << 8) | b;
+uint32_t ledColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
+//  uint8_t w = 0xE0 | settings.bri2;
+  uint32_t c = w;
+  c <<= 8;
+  c |= r;
+  c <<= 8;
+  c |= g;
+  c <<= 8;
+  c |= b;
+  return c;
 }
 
 uint32_t getLed(uint16_t n) {
-  RgbColor co = strip.GetPixelColor(n);
-  return ledColor(co.R, co.G, co.B);
+  RgbwColor co = strip.GetPixelColor(n);
+//  RgbColor co = strip.GetPixelColor(n);
+  return ledColor(co.R, co.G, co.B, co.W);
 }
-#else
-uint32_t ledColor(uint8_t r, uint8_t g, uint8_t b) {
-  return Adafruit_NeoPixel::Color(r, g, b);
-}
-
-uint32_t getLed(uint16_t n) {
-  return strip.getPixelColor(n);
-}
-#endif
 
 uint32_t ledBriColor(uint16_t bri, uint8_t r, uint8_t g, uint8_t b) {
   uint32_t br = bri;
-  return ledColor(r * br / 256, g * br / 256, b * br / 256);
+  return ledColor(r, g, b, br);
 }
 
 
-void setLed(uint16_t n, uint32_t c) {
+void setLedc(uint16_t n, uint32_t c) {
   uint32_t oldC = getLed(n);
   if (oldC != c) {
     lastLedChange = state.now;
     ledsChanged = true;
-#ifdef BUS
     uint8_t r;
     uint8_t g;
     uint8_t b;
+    uint8_t w;
     b = c & 255;
     c >>= 8;
     g = c & 255;
     c >>= 8;
     r = c & 255;
-    strip.SetPixelColor(n, RgbColor(r, g, b));
-#else
-    strip.setPixelColor(n, c);
-#endif
+    c >>= 8;
+    w = c & 255;
+    strip.SetPixelColor(n, RgbwColor(r, g, b, w));
+    // strip.SetPixelColor(n, RgbColor(r, g, b));
   }
 }
 
-void setLed(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
-  setLed(n, ledColor(r, g, b));
+void setLed(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
+  setLedc(n, ledColor(r, g, b, w));
 }
 
 bool sendLeds() {
-  if (ledsChanged & strip.canShow()) {
+  if (ledsChanged && strip.canShow()) {
     if (DEBUG_LED) {
       Serial.print("LEDs: ");
       for (uint16_t i = 0; i < NUM_LED_DEBUG; i++) {
@@ -109,7 +106,7 @@ bool sendLeds() {
       }
       Serial.println();
     }
-    setLed(NUM_LEDS, 0, 0, 0);
+    setLed(NUM_LEDS, 0, 0, 0, 0);
     strip.show();
     ledsChanged = false;
     return true;
@@ -123,15 +120,8 @@ bool sendLeds() {
 }
 
 void initLeds() {
-#ifdef BUS
   Serial.println("using NeoPixelBus");
-#else
-  Serial.println("using Adafruit NeoPixel");
-#endif
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
+  SPI.setFrequency(1000000L);
   strip.begin();
   sendLeds(); // Initialize all pixels to 'off'
 }
-
-
