@@ -48,7 +48,8 @@ void setLedsRainbowCycle() {
 
 void setLedsZylon() {
   const uint16_t swipeHalfWidth = NUM_LEDS / 10;
-  const uint16_t briOff = 8;
+  const uint16_t briOff = settings.bri2 / 4;
+  const uint16_t briOn = settings.bri2;
   uint16_t swipeTPos = cyclePos();
   if (swipeTPos > 512) {
     swipeTPos -= 512;
@@ -56,7 +57,7 @@ void setLedsZylon() {
   }
   const int16_t swipePos = swipeTPos * NUM_LEDS / 512;
   uint32_t cLow = ledColor(state.dynR, state.dynG, state.dynB, briOff);
-  uint32_t cHigh = ledColor(state.dynR, state.dynG, state.dynB, 31);
+  uint32_t cHigh = ledColor(state.dynR, state.dynG, state.dynB, briOn);
   for (uint16_t i = 0; i < NUM_LEDS; i++) {
     if (i < swipePos - swipeHalfWidth || i > swipePos + swipeHalfWidth) {
       setDynLed(i, cLow);
