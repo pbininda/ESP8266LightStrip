@@ -73,7 +73,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
   Serial.println();
-  Serial.println("initializing LED Strip\r\n");
+  Serial.println("initializing LED Strip for Bathroom\r\n");
   readSettings();
   initState();
   initLeds();
@@ -81,5 +81,3 @@ void setup() {
   Serial.println("initializing WIFI\r\n");
   initWiFi();
 }
-
-

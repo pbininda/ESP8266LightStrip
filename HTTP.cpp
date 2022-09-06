@@ -9,7 +9,7 @@ ESP8266WebServer server(80);
 bool serverSetupDone = false;
 const uint8 NUM_MODES = 10;
 
-#define TITEL "K&uuml;chenlicht"
+#define TITEL "Badlicht"
 
 String head() {
   return "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">\r\n<title>" TITEL "</title>\r\n</hread>\r\n<body>\r\n";
