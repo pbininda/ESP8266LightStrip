@@ -1,8 +1,4 @@
 #define BUS
-// GPIO3 UART RXD0
-//#define BUS_METHOD NeoEsp8266Dma10MbpsMethod
-// GPIO2 UART TXD1
-
 #define LEDAPA
 
 #define BRIGHTNESS (0xE0 | 0)
@@ -13,7 +9,7 @@
 #endif
 
 #ifdef LEDAPA
-#define BUS_METHOD DotStarMethod
+#define BUS_METHOD DotStarSpi1MhzMethod
 #define FEATURE DotStarLbgrFeature
 #endif 
 
