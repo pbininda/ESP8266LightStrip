@@ -19,11 +19,11 @@ String tail() {
   return "</body>\r\n</html>\r\n";
 }
 
-void sendResult(String &resp) {
+void sendResult(const String &resp) {
   server.send(200, "text/html", resp);
 }
 
-void sendJsonResult(String resp) {
+void sendJsonResult(const String resp) {
   server.send(200, "application/json", resp);
 }
 
