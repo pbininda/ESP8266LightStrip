@@ -27,6 +27,7 @@ void sendJsonResult(const String resp) {
   server.send(200, "application/json", resp);
 }
 
+extern uint32_t getLed(uint16_t n);
 
 String statusBody() {
   String res("");
@@ -35,13 +36,14 @@ String statusBody() {
     res += "<p>Rise time: " + String(state.riseStart - state.now) + " &rArr; " + String(state.riseStop - state.now) + "</p>";
   }
   if (state.fallStart || state.fallStop) {
-    res += "<p>Rise time: " + String(state.fallStart - state.now) + " &rArr; " + String(state.fallStop - state.now) + "</p>";
+    res += "<p>Fall time: " + String(state.fallStart - state.now) + " &rArr; " + String(state.fallStop - state.now) + "</p>";
   }
   res += "<p>Dyn Level: " + String(state.dynLevel) + "</p>";
   res += "<p>Dyn Factor: " + String(state.dynFactor) + "</p>";
   res += "<p>DynR: " + String(state.dynR);
   res += "   DynG: " + String(state.dynG);
   res += "   DynB: " + String(state.dynB) + "</p>";
+  res += "<p>Led1: " + String(getLed(1), HEX) + "</p>";
   return res;
 }
 
@@ -57,6 +59,7 @@ String formBody() {
   res +=                 numInput("G", "green", 0, 255, settings.g);
   res +=                 numInput("B", "blue", 0, 255, settings.b) + "</p>";
   res +=         "<p>" + numInput("Brightness", "bri", 0, 256, settings.bri) + "</p>";
+  res +=         "<p>" + numInput("Brightness2", "bri2", 0, 256, settings.bri2) + "</p>";
   res +=         "<p>" + numInput("Cycle", "cycle", 0, 60000, settings.cycle) + "</p>";
   res +=         "<p>" + numInput("Rise", "rise", 0, 10000, settings.rise);
   res +=                 numInput("Fall", "fall", 0, 10000, settings.fall) + "</p>";
@@ -116,6 +119,7 @@ void extractArgs() {
   extractArg8("green", settings.g);
   extractArg8("blue", settings.b);
   extractArg16("bri", settings.bri);
+  extractArg8("bri2", settings.bri2);
   extractArg32("cycle", settings.cycle);
   uint8 pal;
   if(extractArg8("pal", pal)) {
@@ -158,6 +162,7 @@ void handleApiGet() {
   jsSettings["g"] = settings.g;
   jsSettings["b"] = settings.b;
   jsSettings["bri"] = settings.bri;
+  jsSettings["bri2"] = settings.bri2;
   jsSettings["cycle"] = settings.cycle;
   jsSettings["rise"] = settings.rise;
   jsSettings["fall"] = settings.fall;
@@ -207,6 +212,10 @@ void handleApiPost() {
     if (jsSettings.containsKey("bri")) {
       settings.bri = jsSettings["bri"];
       settings.bri %= 257;
+    }
+    if (jsSettings.containsKey("bri2")) {
+      settings.bri2 = jsSettings["bri2"];
+      settings.bri2 %= 32;
     }
     if (jsSettings.containsKey("r")) {
       settings.r = jsSettings["r"];
@@ -266,4 +275,3 @@ void handleServer() {
       server.handleClient();
   }
 }
-

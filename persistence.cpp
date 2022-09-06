@@ -8,7 +8,7 @@ struct header {
   uint16_t version;
 };
 
-struct header expectedHeader = {1, 0x1ED5};
+struct header expectedHeader = {0x1ED5, 2};
 
 void printSettings() {
   Serial.print("on: "); Serial.print(settings.on);
@@ -17,6 +17,7 @@ void printSettings() {
   Serial.print("    g: "); Serial.print(settings.g);
   Serial.print("    b: "); Serial.println(settings.b);
   Serial.print("bri: "); Serial.println(settings.bri);
+  Serial.print("bri2: "); Serial.println(settings.bri2);
   Serial.print("rise: "); Serial.print(settings.rise);
   Serial.print("    fall: "); Serial.println(settings.fall);
   Serial.print("cylcle: "); Serial.println(settings.cycle);
@@ -29,6 +30,7 @@ void defaultSettings() {
   settings.g = 255;
   settings.b = 255;
   settings.bri = 256;
+  settings.bri2 = 31;
   settings.rise = 1000;
   settings.fall = 1000;
   settings.cycle = 10000;
@@ -64,5 +66,3 @@ void writeSettings() {
   EEPROM.put(sizeof(struct header), settings);
   EEPROM.commit();
 }
-
-

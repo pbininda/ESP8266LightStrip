@@ -17,7 +17,7 @@
             #brightness-outer {
                 background-color: #a8d3eb;
             }
-            button, #brightness-container {
+            button, #brightness-container, #brightness2-container {
                 border:0;
                 border-radius:0.3rem;
                 background-color:#1fa3ec;
@@ -41,13 +41,13 @@
             #extras.hidden {
                 display: none;
             }
-            #brightness-container span {
+            #brightness-container span, #brightness2-container span {
                 float: left;
                 position: static;
                 width: 100%;
                 text-shadow: -1px -1px 10px #41ec1f, 1px -1px 10px #41ec1f, -1px 1px 10px #41ec1f, 1px 1px 10px #41ec1f;  
             }
-            #current-brightness {
+            #current-brightness, #current-brightness2 {
                 background: #41ec1f;
                 height: 4rem;
                 transition: width 0.2s linear;
@@ -121,6 +121,17 @@
                 v = Math.round(v);
                 currentState.settings.on = true;
                 currentState.settings.bri = v;
+                sendState();
+                e.stopPropagation();
+            }
+
+            function onBrightness2Clicked(e) {
+                let c = document.querySelector('#brightness2-container');
+                let w = c.clientWidth;
+                let x = e.offsetX;
+                let v = x / w * 31;
+                v = Math.round(v);
+                currentState.settings.bri2 = v;
                 sendState();
                 e.stopPropagation();
             }
@@ -201,6 +212,8 @@
                 } else {
                    setAttribute('#current-brightness', 'style', `width: ${0}%;`);
                 }
+                setText("#brightness2-level-text", `${Math.round(response.settings.bri2 / 0.32)}%`);
+                setAttribute('#current-brightness2', 'style', `width: ${response.settings.bri2 / 0.32}%;`);
                 let unadj = {r: response.settings.r, g: response.settings.g, b: response.settings.b};
                 let rgb = adjRgb(unadj);
                 setAttribute('#color-box', 'style', `background-color: rgb(${rgb.r},${rgb.g},${rgb.b})`);
@@ -296,6 +309,17 @@
                             {{settings.bri}}%
                         </span>
                         <div id="current-brightness" style="width: calc({{settings.bri}} / 2.56)%;">
+                        </div>
+                    </div>
+                </div>
+            </p>
+            <p>
+                <div id="brightness2-outer">
+                    <div id="brightness2-container" onclick="onBrightness2Clicked(event)">
+                        <span id="brightness2-level-text">
+                            {{settings.bri2}}%
+                        </span>
+                        <div id="current-brightness2" style="width: calc({{settings.bri2}} / 2.56)%;">
                         </div>
                     </div>
                 </div>

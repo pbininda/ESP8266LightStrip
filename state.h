@@ -11,6 +11,7 @@ extern struct settings {
   uint32_t rise;
   uint32_t fall;
   uint32_t cycle;
+  uint8_t bri2;
 } settings;
 
 extern struct state {
