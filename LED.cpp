@@ -18,7 +18,7 @@
 #include "LED.h"
 #include "state.h"
 
-const int DEBUG_LED = 1;
+const int DEBUG_LED = 0;
 const int DEBUG_LED_NO_OUT = 0;
 const int NUM_LED_DEBUG = 32;
 const int LED_PIN = 2;
