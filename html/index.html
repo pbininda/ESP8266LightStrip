@@ -73,9 +73,11 @@
             }
             #mode-box {
                 width: 100%;
+                display: flex;
+                gap: 1%;
             }
             .mode {
-                width: 33.1%;
+                width: 33.3%;
                 height: 4rem;
                 line-height: 3.5rem;
                 display: inline-block;
@@ -185,7 +187,7 @@
                 let res = "";
                 palette.forEach((unadj, i) => {
                     let element = adjRgb(unadj);
-                    res += `<span class="palette-item" style="background-color: rgb(${element.r},${element.g},${element.b});" onclick="onPalClicked(${i})"></span>`;
+                    res += `<span class="palette-item" data-pal="${i}" style="background-color: rgb(${element.r},${element.g},${element.b});" onclick="onPalClicked(${i})"></span>`;
                     
                 });
                 console.log(res);
@@ -221,6 +223,12 @@
                     createPalette(response.palette);
                     paletteDone = true;
                 }
+                document.querySelectorAll('.mode').forEach(mode => {
+                    mode.setAttribute('style', '');
+                });
+                document.querySelectorAll(`.mode[data-mode="${response.settings.mode}"`).forEach(mode => {
+                    mode.setAttribute('style', 'border: 4px solid #1fa3ec;');
+                });
             }
 
             function sendState() {
@@ -332,9 +340,9 @@
             </p>
             <p>
                 <div id="mode-box">
-                    <span class="mode" onclick="onModeClicked(0)">Fest</span>
-                    <span class="mode" onclick="onModeClicked(1)">Zylon</span>
-                    <span class="mode" onclick="onModeClicked(2)">Farbrad</span>
+                    <span class="mode" data-mode="0" onclick="onModeClicked(0)">Fest</span>
+                    <span class="mode" data-mode="1" onclick="onModeClicked(1)">Zylon</span>
+                    <span class="mode" data-mode="2" onclick="onModeClicked(2)">Farbrad</span>
                 </div>
             </p>
         </div>

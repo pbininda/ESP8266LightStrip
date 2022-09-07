@@ -186,6 +186,7 @@ void handleApiGet() {
     c["b"] = palette[i].b;
   }
 
+
   String jsonString;
   jsRoot.printTo(jsonString);
   // Serial.println(jsonString);
