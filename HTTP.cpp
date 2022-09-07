@@ -8,7 +8,7 @@
 ESP8266WebServer server(80);
 bool serverSetupDone = false;
 const uint8 NUM_MODES = 10;
-
+const uint8 MAX_BRI2 = 24;
 #define TITEL "Badlicht"
 
 String head() {
@@ -215,6 +215,9 @@ void handleApiPost() {
     }
     if (jsSettings.containsKey("bri2")) {
       settings.bri2 = jsSettings["bri2"];
+      if (settings.bri2 > MAX_BRI2) {
+        settings.bri2 = MAX_BRI2;
+      }
       settings.bri2 %= 32;
     }
     if (jsSettings.containsKey("r")) {
