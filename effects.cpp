@@ -18,13 +18,35 @@ uint32_t wheel(uint16_t bri, uint8_t wheelPos) {
   return ledBriColor(bri, wheelPos * 3, 255 - wheelPos * 3, 0);
 }
 
+enum modes {GRADUAL_ON, OUTSIDE_IN, INSIDE_OUT, LTR};
+
+enum modes mode = OUTSIDE_IN;
 
 void setDynLed(uint16_t n, uint32_t c) {
-  if (n < state.dynLevel) {
+  if (mode == GRADUAL_ON) {
+    uint8_t bri = (c >> 24);
+    uint32_t briAdj = bri * (uint32_t) state.dynLevel / DYNRANGE;
+    c = (briAdj << 24) | (c & 0xFFFFFF);
     setLedc(n, c);
-  }
-  else {
-    setLedc(n, 0);
+  } else if (mode == OUTSIDE_IN || mode == INSIDE_OUT) {
+    int32_t p = (int32_t) NUM_LEDS - n * 2 - 1;
+    if (p < 0) p = -p;
+    if (mode == OUTSIDE_IN) {
+      p = NUM_LEDS - p;
+    }
+    if (p < state.dynLevel * ((uint32_t )NUM_LEDS) / DYNRANGE) {
+      setLedc(n, c);
+    }
+    else {
+      setLedc(n, 0);
+    }
+  } else {
+    if (n < state.dynLevel * (uint32_t )NUM_LEDS / DYNRANGE) {
+      setLedc(n, c);
+    }
+    else {
+      setLedc(n, 0);
+    }
   }
 }
 

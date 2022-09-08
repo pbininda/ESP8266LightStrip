@@ -42,4 +42,6 @@ extern uint8_t NUM_BRILEVELS;
 extern void initState();
 extern void updateState(uint8_t numLeds);
 
+#define DYNRANGE (256L * 128L)
+
 #endif

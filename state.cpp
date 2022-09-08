@@ -8,15 +8,15 @@ void updateState(uint8_t numLeds) {
   state.now = millis();
   if (settings.on) {
     if (state.now >= state.riseStart && state.now < state.riseStop) {
-      state.dynLevel = (state.now - state.riseStart) * numLeds / (state.riseStop - state.riseStart);
+      state.dynLevel = (state.now - state.riseStart) * DYNRANGE / (state.riseStop - state.riseStart);
     }
     else if (state.now >= state.riseStop) {
-      state.dynLevel = numLeds;
+      state.dynLevel = DYNRANGE;
     }
   }
   else {
     if (state.now >= state.fallStart && state.now < state.fallStop) {
-      state.dynLevel = (state.fallStop - state.now) * numLeds / (state.fallStop - state.fallStart);
+      state.dynLevel = (state.fallStop - state.now) * DYNRANGE / (state.fallStop - state.fallStart);
     }
     else if (state.now >= state.fallStop) {
       state.dynLevel = 0;
@@ -29,11 +29,8 @@ void updateState(uint8_t numLeds) {
 }
 
 void initState() {
-  state.dynLevel = 256;
+  state.dynLevel = 0;
   state.now = millis();
   state.riseStart = state.now;
   state.riseStop = state.now + settings.rise;
-  state.dynLevel = 10;
 }
-
-
