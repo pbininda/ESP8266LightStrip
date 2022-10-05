@@ -54,7 +54,7 @@ String numInput(const char *label, const char *name, long min, long max, int val
 
 String formBody() {
   String res("<form action=\"/\" method=\"post\">");
-  res += String("<p>") + numInput("On", "on", 0, 1, settings.on) + numInput("Mode", "mode", 0, NUM_MODES - 1, settings.mode) + "</p>";
+  res += String("<p>") + numInput("On", "on", 0, 1, settings.on) + numInput("Mode", "mode", 0, NUM_MODES - 1, settings.mode) + numInput("OnOff Mode", "onoffmode", 0, ONOFFMODE_LAST - 1, settings.onoffmode) + "</p>";
   res += String("<p>") + numInput("R", "red", 0, 255, settings.r);
   res +=                 numInput("G", "green", 0, 255, settings.g);
   res +=                 numInput("B", "blue", 0, 255, settings.b) + "</p>";
@@ -115,6 +115,7 @@ void extractArgs() {
   bool wasOn = settings.on;
   extractArg8("on", settings.on);
   extractArg8("mode", settings.mode);
+  extractArg8("onoffmode", settings.onoffmode);
   extractArg8("red", settings.r);
   extractArg8("green", settings.g);
   extractArg8("blue", settings.b);

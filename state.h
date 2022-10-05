@@ -1,6 +1,8 @@
 #ifndef _STATE_H_
 #define _STATE_H_
 
+enum onoffmodes {NONE, GRADUAL, OUTSIDE_IN, OUTSIDE_IN_SOFT, INSIDE_OUT, INSIDE_OUT_SOFT, LTR, LTR_SOFT, RTL, RTL_SOFT, ONOFFMODE_LAST};
+
 extern struct settings {
   uint8_t on;
   uint8_t mode;
@@ -12,6 +14,7 @@ extern struct settings {
   uint32_t fall;
   uint32_t cycle;
   uint8_t bri2;
+  uint8_t onoffmode;
 } settings;
 
 extern struct state {

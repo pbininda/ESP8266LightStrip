@@ -18,33 +18,54 @@ uint32_t wheel(uint16_t bri, uint8_t wheelPos) {
   return ledBriColor(bri, wheelPos * 3, 255 - wheelPos * 3, 0);
 }
 
-enum modes {GRADUAL_ON, OUTSIDE_IN, INSIDE_OUT, LTR};
+uint32_t adjusted_brightness(uint32_t c, uint32_t partOfDynRange) {
+    uint8_t bri = (c >> 24);
+    uint32_t briAdj = bri * partOfDynRange / DYNRANGE;
+    return (briAdj << 24) | (c & 0xFFFFFF);
+}
 
-enum modes mode = OUTSIDE_IN;
+#define SOFT_RANGE 4
 
 void setDynLed(uint16_t n, uint32_t c) {
-  if (mode == GRADUAL_ON) {
-    uint8_t bri = (c >> 24);
-    uint32_t briAdj = bri * (uint32_t) state.dynLevel / DYNRANGE;
-    c = (briAdj << 24) | (c & 0xFFFFFF);
-    setLedc(n, c);
-  } else if (mode == OUTSIDE_IN || mode == INSIDE_OUT) {
+  uint8_t mode = settings.onoffmode;
+  if (mode == GRADUAL) {
+    setLedc(n, adjusted_brightness(c, state.dynLevel));
+  } else if (mode == OUTSIDE_IN || mode == INSIDE_OUT || mode == OUTSIDE_IN_SOFT || mode == INSIDE_OUT_SOFT) {
     int32_t p = (int32_t) NUM_LEDS - n * 2 - 1;
     if (p < 0) p = -p;
     if (mode == OUTSIDE_IN) {
       p = NUM_LEDS - p;
     }
-    if (p < state.dynLevel * ((uint32_t )NUM_LEDS) / DYNRANGE) {
-      setLedc(n, c);
+    int32_t mark = state.dynLevel * ((uint32_t )NUM_LEDS) / DYNRANGE;
+    if (p < mark) {
+      if (mode == OUTSIDE_IN_SOFT || mode == INSIDE_OUT_SOFT) {
+        setLedc(n, adjusted_brightness(c, state.dynLevel));
+      } else {
+        setLedc(n, c);
+      }
+    }
+    else {
+      setLedc(n, 0);
+    }
+  } else if (mode == LTR || mode == RTL || mode == LTR_SOFT || mode == RTL_SOFT) {
+    int32_t p = n;
+    if (mode == RTL) {
+      p = NUM_LEDS - n - 1;
+    }
+    if (p < state.dynLevel * (uint32_t )NUM_LEDS / DYNRANGE) {
+      if (mode == LTR_SOFT || mode == RTL_SOFT) {
+        setLedc(n, adjusted_brightness(c, state.dynLevel));        
+      } else {
+        setLedc(n, c);
+      }
     }
     else {
       setLedc(n, 0);
     }
   } else {
-    if (n < state.dynLevel * (uint32_t )NUM_LEDS / DYNRANGE) {
+    if (state.dynLevel > 0) {
       setLedc(n, c);
-    }
-    else {
+    } else {
       setLedc(n, 0);
     }
   }

@@ -8,7 +8,7 @@ struct header {
   uint16_t version;
 };
 
-struct header expectedHeader = {0x1ED5, 2};
+struct header expectedHeader = {0x1ED5, 3};
 
 void printSettings() {
   Serial.print("on: "); Serial.print(settings.on);
@@ -21,6 +21,7 @@ void printSettings() {
   Serial.print("rise: "); Serial.print(settings.rise);
   Serial.print("    fall: "); Serial.println(settings.fall);
   Serial.print("cylcle: "); Serial.println(settings.cycle);
+  Serial.print("onoffmode: "); Serial.print(settings.onoffmode);
 }
 
 void defaultSettings() {
@@ -34,6 +35,7 @@ void defaultSettings() {
   settings.rise = 1000;
   settings.fall = 1000;
   settings.cycle = 10000;
+  settings.onoffmode = 0;
 }
 
 void readSettings() {
