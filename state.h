@@ -3,6 +3,13 @@
 
 enum onoffmodes {NONE, GRADUAL, OUTSIDE_IN, OUTSIDE_IN_SOFT, INSIDE_OUT, INSIDE_OUT_SOFT, LTR, LTR_SOFT, RTL, RTL_SOFT, ONOFFMODE_LAST};
 
+const uint8_t NUM_PALETTE = 8;
+struct palette {
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+};
+
 extern struct settings {
   uint8_t on;
   uint8_t mode;
@@ -15,6 +22,7 @@ extern struct settings {
   uint32_t cycle;
   uint8_t bri2;
   uint8_t onoffmode;
+  struct palette palette[NUM_PALETTE];
 } settings;
 
 extern struct state {
@@ -31,13 +39,6 @@ extern struct state {
   uint16_t tick;
 } state;
 
-
-extern struct palette {
-  uint8_t r;
-  uint8_t g;
-  uint8_t b;
-} palette[];
-extern uint8_t NUM_PALETTE;
 
 extern uint16_t briLevels[];
 extern uint8_t NUM_BRILEVELS;

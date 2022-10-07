@@ -8,7 +8,7 @@ struct header {
   uint16_t version;
 };
 
-struct header expectedHeader = {0x1ED5, 3};
+struct header expectedHeader = {0x1ED5, 4};
 
 void printSettings() {
   Serial.print("on: "); Serial.print(settings.on);
@@ -36,6 +36,14 @@ void defaultSettings() {
   settings.fall = 1000;
   settings.cycle = 10000;
   settings.onoffmode = 0;
+  settings.palette[0] = {255, 255, 255};
+  settings.palette[1] = {255, 200, 120};
+  settings.palette[2] = {255, 180, 100};
+  settings.palette[3] = {255, 120, 50};
+  settings.palette[4] = {255, 100, 40};
+  settings.palette[5] = {255, 80, 30};
+  settings.palette[6] = {255, 60, 20};
+  settings.palette[7] = {255, 0, 0};
 }
 
 void readSettings() {

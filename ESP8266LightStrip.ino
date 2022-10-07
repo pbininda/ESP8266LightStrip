@@ -7,17 +7,6 @@
 #include "effects.h"
 
 const bool DEBUG_TIMING = 0;
-struct palette palette[] = {
-  {255, 255, 255},
-  {255, 200, 120},
-  {255, 180, 100},
-  {255, 120, 50},
-  {255, 100, 40},
-  {255, 80, 30},
-  {255, 60, 20},
-  {255, 0, 0}
-};
-uint8_t NUM_PALETTE = (sizeof palette) / (sizeof (struct palette));
 
 uint16_t briLevels[] = {4, 16, 64, 256};
 uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof (uint8));

@@ -125,9 +125,9 @@ void extractArgs() {
   uint8 pal;
   if(extractArg8("pal", pal)) {
     pal = pal % NUM_PALETTE;
-    settings.r = palette[pal].r;
-    settings.g = palette[pal].g;
-    settings.b = palette[pal].b;
+    settings.r = settings.palette[pal].r;
+    settings.g = settings.palette[pal].g;
+    settings.b = settings.palette[pal].b;
   }
   uint8 bril;
   if(extractArg8("bril", bril)) {
@@ -182,9 +182,9 @@ void handleApiGet() {
 
   for (int i = 0; i < NUM_PALETTE; i ++) {
     JsonObject &c = jsPalette.createNestedObject();
-    c["r"] = palette[i].r;
-    c["g"] = palette[i].g;
-    c["b"] = palette[i].b;
+    c["r"] = settings.palette[i].r;
+    c["g"] = settings.palette[i].g;
+    c["b"] = settings.palette[i].b;
   }
 
 
@@ -234,12 +234,24 @@ void handleApiPost() {
       settings.b = jsSettings["b"];
       settings.b %= 256;
     }
+    if (jsSettings.containsKey("setpal")) {
+      JsonObject &jsSetPal = jsSettings["setpal"];
+      if (jsSetPal.containsKey("idx")) {
+        uint8_t idx = jsSetPal["idx"];
+        if (idx < NUM_PALETTE) {
+          uint8_t r = jsSetPal["r"];
+          uint8_t g = jsSetPal["g"];
+          uint8_t b = jsSetPal["b"];
+          settings.palette[idx] = {r, g, b};
+        }
+      }
+    }
     if (jsSettings.containsKey("pal")) {
       uint32 pal = jsSettings["pal"];
       pal = pal % NUM_PALETTE;
-      settings.r = palette[pal].r;
-      settings.g = palette[pal].g;
-      settings.b = palette[pal].b;    
+      settings.r = settings.palette[pal].r;
+      settings.g = settings.palette[pal].g;
+      settings.b = settings.palette[pal].b;    
     }
     if (jsSettings.containsKey("mode")) {
       settings.mode = jsSettings["mode"];
