@@ -65,8 +65,8 @@ void loop() {
     lastTickTime = state.now;
   }
   state.tick++;
-  delay(10);
-  yield();
+  // delay(10);
+  // yield();
 }
 
 void setup() {
