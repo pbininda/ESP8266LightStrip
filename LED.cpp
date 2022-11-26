@@ -20,7 +20,7 @@
 
 const int DEBUG_LED = 0;
 const int DEBUG_LED_NO_OUT = 0;
-const int NUM_LED_DEBUG = 32;
+const int NUM_LED_DEBUG = 4;
 const int LED_PIN = 2;
 #ifdef BUS
 #ifdef LEDWS
@@ -97,7 +97,7 @@ bool sendLeds() {
     if (DEBUG_LED) {
       Serial.print("LEDs: ");
       for (uint16_t i = 0; i < NUM_LED_DEBUG; i++) {
-        Serial.print(getLed(i) % 256 , HEX);
+        Serial.print(getLed(i), HEX);
         Serial.print(" ");
       }
       Serial.println();
