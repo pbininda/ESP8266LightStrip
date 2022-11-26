@@ -1,40 +1,25 @@
-#define BUS
-#define LEDAPA
-
-#define BRIGHTNESS (0xE0 | 0)
-
-#ifdef LEDWS
-#define BUS_METHOD NeoEsp8266Uart800KbpsMethod
-#define FEATURE NeoGrbFeature
-#endif
-
-#ifdef LEDAPA
-#define BUS_METHOD DotStarSpi1MhzMethod
-#define FEATURE DotStarLbgrFeature
-#endif 
-
-#include <NeoPixelBus.h>
-// #include "DotStarSpiMethod2.h"
+#define FASTLED_ESP8266_RAW_PIN_ORDER
+#define FASTLED_USE_GLOBAL_BRIGHTNESS 1
+#include <FastLED.h>
 #include "LED.h"
 #include "state.h"
 
 const int DEBUG_LED = 0;
 const int DEBUG_LED_NO_OUT = 0;
 const int NUM_LED_DEBUG = 4;
-const int LED_PIN = 2;
-#ifdef BUS
-#ifdef LEDWS
-NeoPixelBus<FEATURE, BUS_METHOD> strip(NUM_LEDS + 1, LED_PIN);
-#endif
-#ifdef LEDAPA
-NeoPixelBus<FEATURE, BUS_METHOD> strip(NUM_LEDS + 1);
-#endif
-#define canShow CanShow
-#define begin Begin
-#define show Show
-#else
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS + 1, LED_PIN, NEO_GRB + NEO_KHZ800);
-#endif
+const int LED_PIN = 13;
+const int CLOCK_PIN = 14;
+
+typedef struct internal_rgbw {
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+  uint8_t w;
+} INTERNAL_RGBW;
+
+INTERNAL_RGBW leds[NUM_LEDS + 1];
+
+CRGBArray<NUM_LEDS + 1> fastLeds;
 
 bool ledsChanged = false;
 time_t lastLedChange = 0;
@@ -44,7 +29,6 @@ time_t getLastLedChangeDelta() {
 }
 
 uint32_t ledColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
-//  uint8_t w = 0xE0 | settings.bri2;
   uint32_t c = w;
   c <<= 8;
   c |= r;
@@ -56,9 +40,7 @@ uint32_t ledColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
 }
 
 uint32_t getLed(uint16_t n) {
-  RgbwColor co = strip.GetPixelColor(n);
-//  RgbColor co = strip.GetPixelColor(n);
-  return ledColor(co.R, co.G, co.B, co.W);
+    return ledColor(leds[n].r, leds[n].g, leds[n].b, 0);
 }
 
 uint32_t ledBriColor(uint16_t bri, uint8_t r, uint8_t g, uint8_t b) {
@@ -83,8 +65,10 @@ void setLedc(uint16_t n, uint32_t c) {
     r = c & 255;
     c >>= 8;
     w = c & 255;
-    strip.SetPixelColor(n, RgbwColor(r, g, b, w));
-    // strip.SetPixelColor(n, RgbColor(r, g, b));
+    leds[n].r = r;
+    leds[n].g = g;
+    leds[n].b = b;
+    leds[n].w = w;
   }
 }
 
@@ -93,7 +77,7 @@ void setLed(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
 }
 
 bool sendLeds() {
-  if (ledsChanged && strip.canShow()) {
+  if (ledsChanged) {
     if (DEBUG_LED) {
       Serial.print("LEDs: ");
       for (uint16_t i = 0; i < NUM_LED_DEBUG; i++) {
@@ -103,7 +87,12 @@ bool sendLeds() {
       Serial.println();
     }
     setLed(NUM_LEDS, 0, 0, 0, 0);
-    strip.show();
+    for (int i = 0; i < NUM_LEDS + 1; i++) {
+      fastLeds[i] = CRGB(leds[i].r, leds[i].g, leds[i].b);
+      fastLeds[i].nscale8(leds[i].w * 8);
+    }
+    
+    FastLED.show();
     ledsChanged = false;
     return true;
   }
@@ -116,8 +105,7 @@ bool sendLeds() {
 }
 
 void initLeds() {
-  Serial.println("using NeoPixelBus");
-  SPI.setFrequency(1000000L);
-  strip.begin();
+  Serial.println("FastLED");
+  FastLED.addLeds<APA102, LED_PIN, CLOCK_PIN, BGR>(fastLeds, NUM_LEDS + 1);
   sendLeds(); // Initialize all pixels to 'off'
 }
