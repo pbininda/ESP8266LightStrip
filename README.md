@@ -50,3 +50,26 @@ See http://www.xess.com/blog/esp8266-reflash/ for a dev board setup.
 <img src="doc/assets/controller-bottom.jpg">
 
 * Bottom side of the controller module
+
+# Deployment
+
+## 2022-11-27 espbadoben1
+
+### Environement
+
+**Processor**: exp8266 on white board
+
+**Arduino Board config**: 
+* esp8266 by ESPj266 Community V 3.0.2
+* Boards Manager repo: http://arduino.esp8266.com/stable/package_esp8266com_index.json
+* Board: Generic ESP8266 Module
+* Port: ESP8266-OTA-83e67f at 192168.1.58
+
+**Arduino IDE**: 1.8.15
+
+**Libraries**
+* ArduinoJson by Benoit Blanchon V 5.13.5
+* FastLED by Daniel Garcia V 3.5.0
+* ~~NeoPixelBus by Makuna by Michael C Miller V 2.7.0~~
+
+### Tag: badoben1-2022-11-27
