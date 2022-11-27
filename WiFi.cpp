@@ -30,23 +30,7 @@ void initWiFi() {
   
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-  WiFi.setSleepMode(WIFI_LIGHT_SLEEP);
-  
-}
-
-void initWiFi2() {
-  if (!wiFiSetupDone) {
-    if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("");
-      Serial.println("WiFi connected");
-      wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
-      Serial.println("initializing server\r\n");
-      initServer();
-      Serial.println("ready for commands\r\n");
-      initOta();
-      wiFiSetupDone = true;
-    }
-  }
+  WiFi.setSleepMode(WIFI_NONE_SLEEP);
 }
 
 void handleWiFi() {
@@ -54,7 +38,7 @@ void handleWiFi() {
     if (WiFi.status() == WL_CONNECTED) {
       Serial.println("");
       Serial.println("WiFi connected");
-      wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
+//      wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
       Serial.println("initializing server\r\n");
       initServer();
       Serial.println("ready for commands\r\n");
@@ -66,8 +50,6 @@ void handleWiFi() {
 
 
 void wiFiGoToSleep(uint32_t delayMs) {
-    wifi_set_sleep_type(LIGHT_SLEEP_T);
+//    wifi_set_sleep_type(LIGHT_SLEEP_T);
     delay(delayMs);
 }
-
-
