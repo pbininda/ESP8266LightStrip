@@ -40,7 +40,7 @@ uint32_t ledColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
 }
 
 uint32_t getLed(uint16_t n) {
-    return ledColor(leds[n].r, leds[n].g, leds[n].b, 0);
+    return ledColor(leds[n].r, leds[n].g, leds[n].b, leds[n].w);
 }
 
 uint32_t ledBriColor(uint16_t bri, uint8_t r, uint8_t g, uint8_t b) {
