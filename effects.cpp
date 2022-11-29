@@ -8,14 +8,14 @@
 uint32_t wheel(uint16_t bri, uint8_t wheelPos) {
   wheelPos = 255 - wheelPos;
   if(wheelPos < 85) {
-    return ledBriColor(bri, 255 - wheelPos * 3, 0, wheelPos * 3);
+    return ledColor(bri, 255 - wheelPos * 3, 0, wheelPos * 3);
   }
   if(wheelPos < 170) {
     wheelPos -= 85;
-    return ledBriColor(bri, 0, wheelPos * 3, 255 - wheelPos * 3);
+    return ledColor(bri, 0, wheelPos * 3, 255 - wheelPos * 3);
   }
   wheelPos -= 170;
-  return ledBriColor(bri, wheelPos * 3, 255 - wheelPos * 3, 0);
+  return ledColor(bri, wheelPos * 3, 255 - wheelPos * 3, 0);
 }
 
 uint32_t adjusted_brightness(uint32_t c, uint32_t partOfDynRange) {

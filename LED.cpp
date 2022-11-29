@@ -43,12 +43,6 @@ uint32_t getLed(uint16_t n) {
     return ledColor(leds[n].r, leds[n].g, leds[n].b, leds[n].w);
 }
 
-uint32_t ledBriColor(uint16_t bri, uint8_t r, uint8_t g, uint8_t b) {
-  uint32_t br = bri;
-  return ledColor(r, g, b, br);
-}
-
-
 void setLedc(uint16_t n, uint32_t c) {
   uint32_t oldC = getLed(n);
   if (oldC != c) {
