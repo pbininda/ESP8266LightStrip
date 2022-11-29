@@ -4,13 +4,13 @@
 bool otaSetupDone = false;
 
 void initOta() {
-  String hostname("ESP8266-OTA-");
-  hostname += String(ESP.getChipId(), HEX);
+  String hostname("ESP32-OTA-");
+  hostname += String(ESP.getEfuseMac(), HEX);
   WiFi.hostname(hostname);
   Serial.println("Hostname: " + hostname);
   // Start OTA server.
   ArduinoOTA.setHostname((const char *)hostname.c_str());
-  //ArduinoOTA.setPassword((const char *)"123");
+  ArduinoOTA.setPassword((const char *)"123");
   ArduinoOTA.onStart([]() {
     /*
     String type;

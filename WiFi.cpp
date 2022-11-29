@@ -1,12 +1,8 @@
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
 #include "WiFi.h"
 #include "OTA.h"
 #include "HTTP.h"
 #include "SSID_PASSWORD.h"
-
-extern "C" {
-  #include "user_interface.h"
-}
 
 
 const char* ssid = WIFI_SSID;
@@ -30,7 +26,7 @@ void initWiFi() {
   
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-  WiFi.setSleepMode(WIFI_NONE_SLEEP);
+  // WiFi.setSleepMode(WIFI_NONE_SLEEP);
 }
 
 void handleWiFi() {

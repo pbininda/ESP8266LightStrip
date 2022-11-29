@@ -9,7 +9,7 @@
 const bool DEBUG_TIMING = 0;
 
 uint16_t briLevels[] = {4, 16, 64, 256};
-uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof (uint8));
+uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof (uint8_t));
 
 void setLeds() {
   switch (settings.mode) {

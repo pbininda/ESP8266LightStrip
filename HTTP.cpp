@@ -1,14 +1,14 @@
-#include <ESP8266WebServer.h>
+#include <WebServer.h>
 #include <ArduinoJson.h>
 #include "HTTP.h"
 #include "state.h"
 #include "persistence.h"
 #include "index.h"
 
-ESP8266WebServer server(80);
+WebServer server(80);
 bool serverSetupDone = false;
-const uint8 NUM_MODES = 10;
-const uint8 MAX_BRI2 = 24;
+const uint8_t NUM_MODES = 10;
+const uint8_t MAX_BRI2 = 24;
 #define TITEL "Badlicht"
 
 String head() {
@@ -122,14 +122,14 @@ void extractArgs() {
   extractArg16("bri", settings.bri);
   extractArg8("bri2", settings.bri2);
   extractArg32("cycle", settings.cycle);
-  uint8 pal;
+  uint8_t pal;
   if(extractArg8("pal", pal)) {
     pal = pal % NUM_PALETTE;
     settings.r = settings.palette[pal].r;
     settings.g = settings.palette[pal].g;
     settings.b = settings.palette[pal].b;
   }
-  uint8 bril;
+  uint8_t bril;
   if(extractArg8("bril", bril)) {
     bril = bril % NUM_BRILEVELS;
     settings.bri = briLevels[bril];
@@ -247,7 +247,7 @@ void handleApiPost() {
       }
     }
     if (jsSettings.containsKey("pal")) {
-      uint32 pal = jsSettings["pal"];
+      uint32_t pal = jsSettings["pal"];
       pal = pal % NUM_PALETTE;
       settings.r = settings.palette[pal].r;
       settings.g = settings.palette[pal].g;
