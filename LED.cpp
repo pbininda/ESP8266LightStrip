@@ -1,5 +1,5 @@
-#define FASTLED_ESP8266_RAW_PIN_ORDER
 #define FASTLED_USE_GLOBAL_BRIGHTNESS 1
+
 #include <FastLED.h>
 #include "LED.h"
 #include "state.h"
@@ -7,8 +7,10 @@
 const int DEBUG_LED = 0;
 const int DEBUG_LED_NO_OUT = 0;
 const int NUM_LED_DEBUG = 4;
-const int LED_PIN = 13;
-const int CLOCK_PIN = 14;
+const int LED_PIN = 21;
+const int CLOCK_PIN = 19;
+const int TEST_PIN = 23;
+int toggle = 0;
 
 typedef struct internal_rgbw {
   uint8_t r;
@@ -71,6 +73,8 @@ void setLed(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
 }
 
 bool sendLeds() {
+  digitalWrite(TEST_PIN, toggle ? HIGH : LOW);
+  toggle = !toggle;
   if (ledsChanged) {
     if (DEBUG_LED) {
       Serial.print("LEDs: ");
@@ -100,6 +104,12 @@ bool sendLeds() {
 
 void initLeds() {
   Serial.println("FastLED");
-  FastLED.addLeds<APA102, LED_PIN, CLOCK_PIN, BGR>(fastLeds, NUM_LEDS + 1);
+  pinMode(TEST_PIN, OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(CLOCK_PIN, OUTPUT);
+  digitalWrite(LED_PIN, HIGH);
+  digitalWrite(CLOCK_PIN, HIGH);
+  FastLED.addLeds<APA102, LED_PIN, CLOCK_PIN, BGR, DATA_RATE_MHZ(1)>(fastLeds, NUM_LEDS + 1);
   sendLeds(); // Initialize all pixels to 'off'
+
 }
