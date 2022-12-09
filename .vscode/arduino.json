@@ -1,7 +1,14 @@
 {
-    "board": "esp8266:esp8266:generic",
-    "configuration": "CpuFrequency=80,FlashFreq=40,FlashMode=dio,UploadSpeed=115200,FlashSize=2M,ResetMethod=ck,Debug=Disabled,DebugLevel=None____",
+    "board": "esp32:esp32:esp32",
+    "configuration": "PSRAM=disabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=921600,LoopCore=1,EventsCore=1,DebugLevel=none,EraseFlash=none",
     "sketch": "ESP8266LightStrip.ino",
     "output": "../build",
-    "port": "192.168.1.58"
+    "port": "192.168.1.58",
+    "programmer": "esp32:esptool",
+    "buildPreferences": [
+        [
+            "runtime.pwd.192.168.1.58",
+            "123"
+        ]
+    ]
 }
