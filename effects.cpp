@@ -8,14 +8,14 @@
 uint32_t wheel(uint16_t bri, uint8_t wheelPos) {
   wheelPos = 255 - wheelPos;
   if(wheelPos < 85) {
-    return ledColor(bri, 255 - wheelPos * 3, 0, wheelPos * 3);
+    return ledColor(255 - wheelPos * 3, 0, wheelPos * 3, bri);
   }
   if(wheelPos < 170) {
     wheelPos -= 85;
-    return ledColor(bri, 0, wheelPos * 3, 255 - wheelPos * 3);
+    return ledColor(0, wheelPos * 3, 255 - wheelPos * 3, bri);
   }
   wheelPos -= 170;
-  return ledColor(bri, wheelPos * 3, 255 - wheelPos * 3, 0);
+  return ledColor(wheelPos * 3, 255 - wheelPos * 3, 0, bri);
 }
 
 uint32_t adjusted_brightness(uint32_t c, uint32_t partOfDynRange) {
@@ -33,7 +33,7 @@ void setDynLed(uint16_t n, uint32_t c) {
   } else if (mode == OUTSIDE_IN || mode == INSIDE_OUT || mode == OUTSIDE_IN_SOFT || mode == INSIDE_OUT_SOFT) {
     int32_t p = (int32_t) NUM_LEDS - n * 2 - 1;
     if (p < 0) p = -p;
-    if (mode == OUTSIDE_IN) {
+    if (mode == OUTSIDE_IN || mode == OUTSIDE_IN_SOFT) {
       p = NUM_LEDS - p;
     }
     int32_t mark = state.dynLevel * ((uint32_t )NUM_LEDS) / DYNRANGE;
