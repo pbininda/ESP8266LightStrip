@@ -1,4 +1,4 @@
-#include <Arduino.h>
+#include <stdint.h>
 #include <EEPROM.h>
 #include "state.h"
 #include "persistence.h"
@@ -8,9 +8,9 @@ struct header {
   uint16_t version;
 };
 
-struct header expectedHeader = {0x1ED5, 4};
+static struct header expectedHeader = {0x1ED5, 4};
 
-void printSettings() {
+static void printSettings() {
   Serial.print("on: "); Serial.print(settings.on);
   Serial.print("    mode: "); Serial.println(settings.mode);
   Serial.print("r: "); Serial.print(settings.r);
@@ -24,7 +24,7 @@ void printSettings() {
   Serial.print("onoffmode: "); Serial.print(settings.onoffmode);
 }
 
-void defaultSettings() {
+static void defaultSettings() {
   settings.on = true;
   settings.mode = 0;
   settings.r = 255;

@@ -1,4 +1,6 @@
-#include "Arduino.h"
+#include <stdint.h>
+#include <time.h>
+#include <HardwareSerial.h>
 #include "WiFiServe.h"
 #include "OTA.h"
 #include "HTTP.h"
@@ -7,12 +9,12 @@
 #include "persistence.h"
 #include "effects.h"
 
-const bool DEBUG_TIMING = 0;
-
 uint16_t briLevels[] = {4, 16, 64, 256};
 uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof (uint8_t));
 
-void setLeds() {
+static const bool DEBUG_TIMING = 0;
+
+static void setLeds() {
   switch (settings.mode) {
     default:
     case 0:

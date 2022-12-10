@@ -1,3 +1,5 @@
+#include <stdint.h>
+#include <time.h>
 #include <Arduino.h>
 #include "state.h"
 

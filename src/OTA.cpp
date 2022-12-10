@@ -3,7 +3,7 @@
 #include <ArduinoOTA.h>
 #include "OTA.h"
 
-bool otaSetupDone = false;
+static bool otaSetupDone = false;
 
 void initOta() {
   String hostname("ESP32-OTA-");
@@ -50,4 +50,3 @@ void handleOta() {
     ArduinoOTA.handle();
   }
 }
-

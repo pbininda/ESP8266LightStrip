@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <Arduino.h>
 #include <WiFiServer.h>
 #include <WiFi.h>
 #include "WiFiServe.h"
@@ -7,12 +6,10 @@
 #include "HTTP.h"
 #include "SSID_PASSWORD.h"
 
+static const char* ssid = WIFI_SSID;
+static const char* password = WIFI_PASSWORD;
 
-const char* ssid = WIFI_SSID;
-const char* password = WIFI_PASSWORD;
-
-
-bool wiFiSetupDone = false;
+static bool wiFiSetupDone = false;
 
 void initWiFi() {
   // Connect to WiFi network
@@ -46,7 +43,6 @@ void handleWiFi() {
     }
   }
 }
-
 
 void wiFiGoToSleep(uint32_t delayMs) {
 //    wifi_set_sleep_type(LIGHT_SLEEP_T);

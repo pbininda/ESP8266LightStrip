@@ -6,7 +6,7 @@
 
 // Input a value 0 to 255 to get a color value.
 // The colours are a transition r - g - b - back to r.
-uint32_t wheel(uint16_t bri, uint8_t wheelPos) {
+static uint32_t wheel(uint16_t bri, uint8_t wheelPos) {
   wheelPos = 255 - wheelPos;
   if(wheelPos < 85) {
     return ledColor(255 - wheelPos * 3, 0, wheelPos * 3, bri);
@@ -19,15 +19,13 @@ uint32_t wheel(uint16_t bri, uint8_t wheelPos) {
   return ledColor(wheelPos * 3, 255 - wheelPos * 3, 0, bri);
 }
 
-uint32_t adjusted_brightness(uint32_t c, uint32_t partOfDynRange) {
+static uint32_t adjusted_brightness(uint32_t c, uint32_t partOfDynRange) {
     uint8_t bri = (c >> 24);
     uint32_t briAdj = bri * partOfDynRange / DYNRANGE;
     return (briAdj << 24) | (c & 0xFFFFFF);
 }
 
-#define SOFT_RANGE 4
-
-void setDynLed(uint16_t n, uint32_t c) {
+static void setDynLed(uint16_t n, uint32_t c) {
   uint8_t mode = settings.onoffmode;
   if (mode == GRADUAL) {
     setLedc(n, adjusted_brightness(c, state.dynLevel));
@@ -72,15 +70,15 @@ void setDynLed(uint16_t n, uint32_t c) {
   }
 }
 
+static uint16_t cyclePos() {
+  uint32_t cycle = state.now % settings.cycle;
+  return cycle * 1024 / settings.cycle;
+}
+
 void setLedsFixed(uint32_t c) {
   for (uint16_t i = 0; i < NUM_LEDS; i++) {
     setDynLed(i, c);
   }
-}
-
-uint16_t cyclePos() {
-  uint32_t cycle = state.now % settings.cycle;
-  return cycle * 1024 / settings.cycle;
 }
 
 void setLedsRainbowCycle() {

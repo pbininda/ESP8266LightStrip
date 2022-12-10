@@ -5,33 +5,33 @@
 #include "HTTP.h"
 #include "state.h"
 #include "persistence.h"
+#include "LED.h"
 #include "index.h"
 
-WebServer server(80);
-bool serverSetupDone = false;
-const uint8_t NUM_MODES = 10;
-const uint8_t MAX_BRI2 = 24;
+static WebServer server(80);
+static bool serverSetupDone = false;
+static const uint8_t NUM_MODES = 10;
+static const uint8_t MAX_BRI2 = 24;
+
 #define TITEL "Badlicht"
 
-String head() {
+static String head() {
   return "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">\r\n<title>" TITEL "</title>\r\n</hread>\r\n<body>\r\n";
 }
 
-String tail() {
+static String tail() {
   return "</body>\r\n</html>\r\n";
 }
 
-void sendResult(const String &resp) {
+static void sendResult(const String &resp) {
   server.send(200, "text/html", resp);
 }
 
-void sendJsonResult(const String resp) {
+static void sendJsonResult(const String resp) {
   server.send(200, "application/json", resp);
 }
 
-extern uint32_t getLed(uint16_t n);
-
-String statusBody() {
+static String statusBody() {
   String res("");
   res += "<p>V2</p>";
   if (state.riseStart || state.riseStop) {
@@ -50,11 +50,11 @@ String statusBody() {
 }
 
 
-String numInput(const char *label, const char *name, long min, long max, int value) {
+static String numInput(const char *label, const char *name, long min, long max, int value) {
   return String("<label>") + label + ":</label><input name=\"" + name + "\" type=\"number\" min=\"" + String(min) + " \" max=\"" + String(max) + "\" value=\"" + String(value) + "\"></p>";
 }
 
-String formBody() {
+static String formBody() {
   String res("<form action=\"/\" method=\"post\">");
   res += String("<p>") + numInput("On", "on", 0, 1, settings.on) + numInput("Mode", "mode", 0, NUM_MODES - 1, settings.mode) + numInput("OnOff Mode", "onoffmode", 0, ONOFFMODE_LAST - 1, settings.onoffmode) + "</p>";
   res += String("<p>") + numInput("R", "red", 0, 255, settings.r);
@@ -71,7 +71,7 @@ String formBody() {
   return res;
 }
 
-bool extractArg8(const char *arg, uint8_t &target) {
+static bool extractArg8(const char *arg, uint8_t &target) {
   String str = server.arg(arg);
   if (str.length() > 0) {
     target = str.toInt();
@@ -80,7 +80,7 @@ bool extractArg8(const char *arg, uint8_t &target) {
   return false;
 }
 
-bool extractArg16(const char *arg, uint16_t &target) {
+static bool extractArg16(const char *arg, uint16_t &target) {
   String str = server.arg(arg);
   if (str.length() > 0) {
     target = str.toInt();
@@ -89,7 +89,7 @@ bool extractArg16(const char *arg, uint16_t &target) {
   return false;
 }
 
-bool extractArg32(const char *arg, uint32_t &target) {
+static bool extractArg32(const char *arg, uint32_t &target) {
   String str = server.arg(arg);
   if (str.length() > 0) {
     target = str.toInt();
@@ -98,7 +98,7 @@ bool extractArg32(const char *arg, uint32_t &target) {
   return false;
 }
 
-void processSettings(bool wasOn) {
+static void processSettings(bool wasOn) {
   time_t now = millis();
   if (settings.on  != wasOn) {
     if (settings.on) {
@@ -113,7 +113,7 @@ void processSettings(bool wasOn) {
   writeSettings();
 }
 
-void extractArgs() {
+static void extractArgs() {
   bool wasOn = settings.on;
   extractArg8("on", settings.on);
   extractArg8("mode", settings.mode);
@@ -141,18 +141,17 @@ void extractArgs() {
   processSettings(wasOn);
 }
 
-void handleIndex() {
+static void handleIndex() {
   extractArgs();
   sendResult(head() + formBody() + statusBody() + tail());
 }
 
-
-void handleSet() {
+static void handleSet() {
   extractArgs();
   sendResult(head() + formBody() + statusBody() + "<p>sent command</p>\r\n" + tail());
 }
 
-void handleApiGet() {
+static void handleApiGet() {
   DynamicJsonBuffer jsonBuffer;
   JsonObject &jsRoot = jsonBuffer.createObject();
   JsonObject &jsState = jsRoot.createNestedObject("state");  
@@ -196,7 +195,7 @@ void handleApiGet() {
   sendJsonResult(jsonString);
 }
 
-void handleApiPost() {
+static void handleApiPost() {
   Serial.println("got post");
   bool wasOn = settings.on;
   DynamicJsonBuffer jsonBuffer;
@@ -263,19 +262,18 @@ void handleApiPost() {
   processSettings(wasOn);
 }
 
-String index() {
+static String index() {
   String res(HTTP_MAIN);
   return res;
 }
 
-void handleSpa() {
+static void handleSpa() {
   extractArgs();
   String indexData = index();
   sendResult(indexData);
 }
 
-
-void initServer() {
+extern void initServer() {
   // Start the server
   server.on("/", HTTP_GET, handleIndex);
   server.on("/", HTTP_POST, handleSet);
@@ -289,7 +287,7 @@ void initServer() {
   Serial.println(WiFi.localIP());
 }
 
-void handleServer() {
+extern void handleServer() {
   if (serverSetupDone) {
       server.handleClient();
   }

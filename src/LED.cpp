@@ -4,13 +4,13 @@
 #include "LED.h"
 #include "state.h"
 
-const int DEBUG_LED = 0;
-const int DEBUG_LED_NO_OUT = 0;
-const int NUM_LED_DEBUG = 4;
-const int LED_PIN = 21;
-const int CLOCK_PIN = 19;
-const int TEST_PIN = 23;
-int toggle = 0;
+static const int DEBUG_LED = 0;
+static const int DEBUG_LED_NO_OUT = 0;
+static const int NUM_LED_DEBUG = 4;
+static const int LED_PIN = 21;
+static const int CLOCK_PIN = 19;
+static const int TEST_PIN = 23;
+static int toggle = 0;
 
 typedef struct internal_rgbw {
   uint8_t r;
@@ -19,12 +19,20 @@ typedef struct internal_rgbw {
   uint8_t w;
 } INTERNAL_RGBW;
 
-INTERNAL_RGBW leds[NUM_LEDS + 1];
+static INTERNAL_RGBW leds[NUM_LEDS + 1];
 
-CRGBArray<NUM_LEDS + 1> fastLeds;
+static CRGBArray<NUM_LEDS + 1> fastLeds;
 
-bool ledsChanged = false;
-time_t lastLedChange = 0;
+static bool ledsChanged = false;
+static time_t lastLedChange = 0;
+
+static void setLed(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
+  setLedc(n, ledColor(r, g, b, w));
+}
+
+uint32_t getLed(uint16_t n) {
+    return ledColor(leds[n].r, leds[n].g, leds[n].b, leds[n].w);
+}
 
 time_t getLastLedChangeDelta() {
   return state.now - lastLedChange;
@@ -39,10 +47,6 @@ uint32_t ledColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
   c <<= 8;
   c |= b;
   return c;
-}
-
-uint32_t getLed(uint16_t n) {
-    return ledColor(leds[n].r, leds[n].g, leds[n].b, leds[n].w);
 }
 
 void setLedc(uint16_t n, uint32_t c) {
@@ -68,10 +72,6 @@ void setLedc(uint16_t n, uint32_t c) {
   }
 }
 
-void setLed(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
-  setLedc(n, ledColor(r, g, b, w));
-}
-
 bool sendLeds() {
   digitalWrite(TEST_PIN, toggle ? HIGH : LOW);
   toggle = !toggle;
@@ -89,7 +89,6 @@ bool sendLeds() {
       fastLeds[i] = CRGB(leds[i].r, leds[i].g, leds[i].b);
       fastLeds[i].nscale8(leds[i].w * 8);
     }
-    
     FastLED.show();
     ledsChanged = false;
     return true;
@@ -111,5 +110,4 @@ void initLeds() {
   digitalWrite(CLOCK_PIN, HIGH);
   FastLED.addLeds<APA102, LED_PIN, CLOCK_PIN, BGR, DATA_RATE_MHZ(1)>(fastLeds, NUM_LEDS + 1);
   sendLeds(); // Initialize all pixels to 'off'
-
 }
