@@ -1,3 +1,5 @@
+#include <stdint.h>
+#include <WiFi.h>
 #include <ArduinoOTA.h>
 #include "OTA.h"
 

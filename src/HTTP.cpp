@@ -1,3 +1,5 @@
+#include <stdint.h>
+#include <WiFi.h>
 #include <WebServer.h>
 #include <ArduinoJson.h>
 #include "HTTP.h"

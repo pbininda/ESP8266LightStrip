@@ -1,5 +1,8 @@
+#include <stdint.h>
+#include <Arduino.h>
+#include <WiFiServer.h>
 #include <WiFi.h>
-#include "WiFi.h"
+#include "WiFiServe.h"
 #include "OTA.h"
 #include "HTTP.h"
 #include "SSID_PASSWORD.h"

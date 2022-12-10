@@ -10,4 +10,5 @@ extern bool sendLeds();
 extern time_t getLastLedChangeDelta();
 
 extern void initLeds();
-#endif*+
+#endif
+

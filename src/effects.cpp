@@ -1,4 +1,5 @@
-#include <Arduino.h>
+#include <stdint.h>
+#include <time.h>
 #include "LED.h"
 #include "state.h"
 #include "effects.h"
