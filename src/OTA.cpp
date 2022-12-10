@@ -12,7 +12,7 @@ void initOta() {
   Serial.println("Hostname: " + hostname);
   // Start OTA server.
   ArduinoOTA.setHostname((const char *)hostname.c_str());
-  ArduinoOTA.setPassword((const char *)"123");
+  // ArduinoOTA.setPassword((const char *)"123");
   ArduinoOTA.onStart([]() {
     /*
     String type;
