@@ -10,7 +10,7 @@
 #include "effects.h"
 
 uint16_t briLevels[] = {4, 16, 64, 256};
-uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof (uint8_t));
+uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof briLevels[0]);
 
 static const bool DEBUG_TIMING = 0;
 
