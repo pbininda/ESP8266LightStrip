@@ -1,3 +1,4 @@
+#include "Arduino.h"
 #include "WiFiServe.h"
 #include "OTA.h"
 #include "HTTP.h"
