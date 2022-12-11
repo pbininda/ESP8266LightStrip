@@ -152,11 +152,11 @@ static void handleSet() {
 }
 
 static void handleApiGet() {
-  DynamicJsonBuffer jsonBuffer;
-  JsonObject &jsRoot = jsonBuffer.createObject();
-  JsonObject &jsState = jsRoot.createNestedObject("state");  
-  JsonObject &jsSettings = jsRoot.createNestedObject("settings");
-  JsonArray &jsPalette = jsRoot.createNestedArray("palette");
+  DynamicJsonDocument jsonDocument(1536);
+  JsonObject jsRoot = jsonDocument.to<JsonObject>();
+  JsonObject jsState = jsRoot.createNestedObject("state");  
+  JsonObject jsSettings = jsRoot.createNestedObject("settings");
+  JsonArray jsPalette = jsRoot.createNestedArray("palette");
 
   jsSettings["on"] = settings.on != 0;
   jsSettings["mode"] = settings.mode;
@@ -182,7 +182,7 @@ static void handleApiGet() {
   jsState["dynB"] = state.dynB;
 
   for (int i = 0; i < NUM_PALETTE; i ++) {
-    JsonObject &c = jsPalette.createNestedObject();
+    JsonObject c = jsPalette.createNestedObject();
     c["r"] = settings.palette[i].r;
     c["g"] = settings.palette[i].g;
     c["b"] = settings.palette[i].b;
@@ -190,7 +190,7 @@ static void handleApiGet() {
 
 
   String jsonString;
-  jsRoot.printTo(jsonString);
+  serializeJson(jsonDocument, jsonString);
   // Serial.println(jsonString);
   sendJsonResult(jsonString);
 }
@@ -198,15 +198,16 @@ static void handleApiGet() {
 static void handleApiPost() {
   Serial.println("got post");
   bool wasOn = settings.on;
-  DynamicJsonBuffer jsonBuffer;
+  DynamicJsonDocument jsonDocument(1536);
   String jsonString(server.arg("plain"));
   Serial.print("POST: ");
   Serial.println(jsonString);
-  JsonObject &root = jsonBuffer.parseObject(jsonString);
-  if (root.success()) {
-    // Serial.println("root success");
-    // JsonObject &jsState = root["state"];
-    JsonObject &jsSettings = root["settings"];
+  DeserializationError error = deserializeJson(jsonDocument, jsonString);
+  if (error) {
+    Serial.println(error.c_str());
+  } else {
+    JsonObject root = jsonDocument.as<JsonObject>();
+    JsonObject jsSettings = root["settings"];
     if (jsSettings.containsKey("on")) {
       bool on = jsSettings["on"];
       Serial.println(String("on: ") + on);
@@ -236,7 +237,7 @@ static void handleApiPost() {
       settings.b %= 256;
     }
     if (jsSettings.containsKey("setpal")) {
-      JsonObject &jsSetPal = jsSettings["setpal"];
+      JsonObject jsSetPal = jsSettings["setpal"];
       if (jsSetPal.containsKey("idx")) {
         uint8_t idx = jsSetPal["idx"];
         if (idx < NUM_PALETTE) {
