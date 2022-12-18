@@ -5,12 +5,8 @@
 #include "WiFiServe.h"
 #include "OTA.h"
 #include "HTTP.h"
-#include "SSID_PASSWORD.h"
 
 static const PROGMEM char *NAME = "Lichterstreifen";
-
-static const char* ssid = WIFI_SSID;
-static const char* password = WIFI_PASSWORD;
 
 static bool wiFiSetupDone = false;
 static WiFiManager wifiManager;
