@@ -4,6 +4,7 @@
 extern void initWiFi();
 extern void handleWiFi();
 extern void wiFiGoToSleep(uint32_t delayMs);
+extern void startWiFiPortal();
 
 #endif
 

@@ -6,6 +6,7 @@
 #include "state.h"
 #include "persistence.h"
 #include "LED.h"
+#include "WiFiServe.h"
 #include "index.h"
 
 static WebServer server(80);
@@ -67,7 +68,10 @@ static String formBody() {
   res +=                 numInput("Fall", "fall", 0, 10000, settings.fall) + "</p>";
   res +=         "<button type=\"submit\">Set</button>";
   res +=         "</form>\r\n";
-  res += "<p><a href=\"/\">Reload</a></p>";
+  res += "<p><a href=\"/\">Reload</a></p>\r\n";
+  res += "<form action=\"/setup\" method=\"post\">";
+  res += "<button type=\"submit\">Reset WiFi</button>";
+  res += "</form>\r\n";
   return res;
 }
 
@@ -274,6 +278,17 @@ static void handleSpa() {
   sendResult(indexData);
 }
 
+static void handleSetupRedir() {
+  server.sendHeader("location", "/");
+  server.send(301, "application/text", "redirect to root");
+}
+
+static void handleSetup() {
+  handleSetupRedir();
+  startWiFiPortal();
+}
+
+
 extern void initServer() {
   // Start the server
   server.on("/", HTTP_GET, handleIndex);
@@ -282,6 +297,8 @@ extern void initServer() {
   server.on("/switch", HTTP_GET, handleSet);
   server.on("/api", HTTP_GET, handleApiGet);
   server.on("/api", HTTP_POST, handleApiPost);
+  server.on("/setup", HTTP_POST, handleSetup);
+  server.on("/setup", HTTP_GET, handleSetupRedir);
   server.begin();
   serverSetupDone = true;
   Serial.print("Server started on ");

@@ -7,12 +7,20 @@
 #include "HTTP.h"
 #include "SSID_PASSWORD.h"
 
+static const PROGMEM char *NAME = "Lichterstreifen";
+
 static const char* ssid = WIFI_SSID;
 static const char* password = WIFI_PASSWORD;
 
 static bool wiFiSetupDone = false;
 static WiFiManager wifiManager;
 
+
+void startWiFiPortal() {
+  Serial.print("Resetting WIFI");
+  WiFi.disconnect(false, true);
+  ESP.restart();
+}
 
 void initWiFi() {
   // Connect to WiFi network
@@ -23,7 +31,7 @@ void initWiFi() {
     Serial.print(":");
     Serial.print(MAC[i],HEX);
   }
-  wifiManager.autoConnect("^Generische Lampe");
+  wifiManager.autoConnect(NAME);
   // WiFi.setSleepMode(WIFI_NONE_SLEEP);
 }
 
@@ -31,6 +39,7 @@ void handleWiFi() {
   if (!wiFiSetupDone) {
     if (WiFi.status() == WL_CONNECTED) {
       Serial.println("");
+      Serial.println(NAME);
       Serial.println("WiFi connected");
 //      wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
       Serial.println("initializing server\r\n");
