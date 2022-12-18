@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <WiFiServer.h>
 #include <WiFi.h>
+#include <WiFiManager.h>
 #include "WiFiServe.h"
 #include "OTA.h"
 #include "HTTP.h"
@@ -10,6 +11,8 @@ static const char* ssid = WIFI_SSID;
 static const char* password = WIFI_PASSWORD;
 
 static bool wiFiSetupDone = false;
+static WiFiManager wifiManager;
+
 
 void initWiFi() {
   // Connect to WiFi network
@@ -20,12 +23,7 @@ void initWiFi() {
     Serial.print(":");
     Serial.print(MAC[i],HEX);
   }
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-  
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
+  wifiManager.autoConnect("^Generische Lampe");
   // WiFi.setSleepMode(WIFI_NONE_SLEEP);
 }
 
