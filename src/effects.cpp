@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <time.h>
+#include "settings.h"
 #include "LED.h"
 #include "state.h"
 #include "effects.h"

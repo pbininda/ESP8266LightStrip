@@ -1,6 +1,7 @@
 #define FASTLED_USE_GLOBAL_BRIGHTNESS 1
 
 #include <FastLED.h>
+#include "settings.h"
 #include "LED.h"
 #include "state.h"
 

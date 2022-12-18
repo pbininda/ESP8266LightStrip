@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <HardwareSerial.h>
+#include "settings.h"
 #include "WiFiServe.h"
 #include "OTA.h"
 #include "HTTP.h"

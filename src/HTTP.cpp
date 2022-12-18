@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ArduinoJson.h>
+#include "settings.h"
 #include "HTTP.h"
 #include "state.h"
 #include "persistence.h"
@@ -12,12 +13,9 @@
 static WebServer server(80);
 static bool serverSetupDone = false;
 static const uint8_t NUM_MODES = 10;
-static const uint8_t MAX_BRI2 = 24;
-
-#define TITEL "Badlicht"
 
 static String head() {
-  return "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">\r\n<title>" TITEL "</title>\r\n</hread>\r\n<body>\r\n";
+  return "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">\r\n<title>" SYSTEM_NAME "</title>\r\n</hread>\r\n<body>\r\n";
 }
 
 static String tail() {
