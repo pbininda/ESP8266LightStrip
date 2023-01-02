@@ -14,8 +14,11 @@ static WebServer server(80);
 static bool serverSetupDone = false;
 static const uint8_t NUM_MODES = 10;
 
-static String head() {
-  return "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">\r\n<title>" SYSTEM_NAME "</title>\r\n</hread>\r\n<body>\r\n";
+static const char HEAD_1[] PROGMEM = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">\r\n<title>";
+static const char HEAD_2[] PROGMEM = "</title>\r\n</hread>\r\n<body>\r\n";
+
+static String head(const StripSettings &stripSettings) {
+  return String(HEAD_1) + stripSettings.SYSTEM_NAME + HEAD_2;
 }
 
 static String tail() {
@@ -30,7 +33,7 @@ static void sendJsonResult(const String resp) {
   server.send(200, "application/json", resp);
 }
 
-static String statusBody() {
+static String statusBody(const State &state,const Led &led) {
   String res("");
   res += "<p>V2</p>";
   if (state.riseStart || state.riseStop) {
@@ -44,7 +47,7 @@ static String statusBody() {
   res += "<p>DynR: " + String(state.dynR);
   res += "   DynG: " + String(state.dynG);
   res += "   DynB: " + String(state.dynB) + "</p>";
-  res += "<p>Led1: " + String(getLed(1), HEX) + "</p>";
+  res += "<p>Led1: " + String(led.getLed(1), HEX) + "</p>";
   return res;
 }
 
@@ -53,8 +56,8 @@ static String numInput(const char *label, const char *name, long min, long max, 
   return String("<label>") + label + ":</label><input name=\"" + name + "\" type=\"number\" min=\"" + String(min) + " \" max=\"" + String(max) + "\" value=\"" + String(value) + "\"></p>";
 }
 
-static String formBody() {
-  String res("<form action=\"/\" method=\"post\">");
+static String formBody(const Settings &settings, uint8_t strip) {
+  String res("<form action=\"/{{STRIP}}\" method=\"post\">");
   res += String("<p>") + numInput("On", "on", 0, 1, settings.on) + numInput("Mode", "mode", 0, NUM_MODES - 1, settings.mode) + numInput("OnOff Mode", "onoffmode", 0, ONOFFMODE_LAST - 1, settings.onoffmode) + "</p>";
   res += String("<p>") + numInput("R", "red", 0, 255, settings.r);
   res +=                 numInput("G", "green", 0, 255, settings.g);
@@ -66,10 +69,11 @@ static String formBody() {
   res +=                 numInput("Fall", "fall", 0, 10000, settings.fall) + "</p>";
   res +=         "<button type=\"submit\">Set</button>";
   res +=         "</form>\r\n";
-  res += "<p><a href=\"/\">Reload</a></p>\r\n";
+  res += "<p><a href=\"/{{STRIP}}\">Reload</a></p>\r\n";
   res += "<form action=\"/setup\" method=\"post\">";
   res += "<button type=\"submit\">Reset WiFi</button>";
   res += "</form>\r\n";
+  res.replace("{{STRIP}}", String(strip));
   return res;
 }
 
@@ -100,9 +104,9 @@ static bool extractArg32(const char *arg, uint32_t &target) {
   return false;
 }
 
-static void processSettings(bool wasOn) {
+static void processSettings(const Settings &settings, State &state, bool wasOn) {
   time_t now = millis();
-  if (settings.on  != wasOn) {
+  if (settings.on != wasOn) {
     if (settings.on) {
       state.riseStart = now;
       state.riseStop = now + settings.rise;
@@ -115,7 +119,7 @@ static void processSettings(bool wasOn) {
   writeSettings();
 }
 
-static void extractArgs() {
+static void extractArgs(Settings &settings, State &state) {
   bool wasOn = settings.on;
   extractArg8("on", settings.on);
   extractArg8("mode", settings.mode);
@@ -140,20 +144,20 @@ static void extractArgs() {
   }
   extractArg32("rise", settings.rise);
   extractArg32("fall", settings.fall);
-  processSettings(wasOn);
+  processSettings(settings, state, wasOn);
 }
 
-static void handleIndex() {
-  extractArgs();
-  sendResult(head() + formBody() + statusBody() + tail());
+static void handleIndex(Settings &settings, State &state, const Led &led, const StripSettings &stripSettings, uint8_t strip) {
+  extractArgs(settings, state);
+  sendResult(head(stripSettings) + formBody(settings, strip) + statusBody(state, led) + tail());
 }
 
-static void handleSet() {
-  extractArgs();
-  sendResult(head() + formBody() + statusBody() + "<p>sent command</p>\r\n" + tail());
+static void handleSet(Settings &settings, State &state, const Led &led, const StripSettings &stripSettings, uint8_t strip) {
+  extractArgs(settings, state);
+  sendResult(head(stripSettings) + formBody(settings, strip) + statusBody(state, led) + "<p>sent command</p>\r\n" + tail());
 }
 
-static void handleApiGet() {
+static void handleApiGet(const Settings &settings, const State &state) {
   DynamicJsonDocument jsonDocument(1536);
   JsonObject jsRoot = jsonDocument.to<JsonObject>();
   JsonObject jsState = jsRoot.createNestedObject("state");  
@@ -197,7 +201,7 @@ static void handleApiGet() {
   sendJsonResult(jsonString);
 }
 
-static void handleApiPost() {
+static void handleApiPost(Settings &settings, State &state, const StripSettings &stripSettings) {
   Serial.println("got post");
   bool wasOn = settings.on;
   DynamicJsonDocument jsonDocument(1536);
@@ -221,8 +225,8 @@ static void handleApiPost() {
     }
     if (jsSettings.containsKey("bri2")) {
       settings.bri2 = jsSettings["bri2"];
-      if (settings.bri2 > MAX_BRI2) {
-        settings.bri2 = MAX_BRI2;
+      if (settings.bri2 > stripSettings.MAX_BRI2) {
+        settings.bri2 = stripSettings.MAX_BRI2;
       }
       settings.bri2 %= 32;
     }
@@ -262,7 +266,25 @@ static void handleApiPost() {
     }
   }
   sendJsonResult("\"OK\"");
-  processSettings(wasOn);
+  processSettings(settings, state, wasOn);
+}
+
+static void handleLedsGet(const Led &led) {
+  DynamicJsonDocument jsonDocument(1536);
+  JsonObject jsRoot = jsonDocument.to<JsonObject>();
+  JsonArray jsLeds = jsRoot.createNestedArray("leds");
+  for (uint16_t i = 0; i < led.stripSettings.NUM_LEDS; i ++) {
+    JsonObject c = jsLeds.createNestedObject();
+    INTERNAL_RGBW l = led.getLedc(i);
+    c["r"] = l.r;
+    c["g"] = l.g;
+    c["b"] = l.b;
+    c["w"] = l.w;
+  }
+  String jsonString;
+  serializeJson(jsonDocument, jsonString);
+  // Serial.println(jsonString);
+  sendJsonResult(jsonString);
 }
 
 static String index() {
@@ -270,9 +292,11 @@ static String index() {
   return res;
 }
 
-static void handleSpa() {
-  extractArgs();
+static void handleSpa(Settings &settings, State &state, const StripSettings &stripSettings, uint8_t strip) {
+  extractArgs(settings, state);
   String indexData = index();
+  indexData.replace("{{SYSTEM_NAME}}", stripSettings.SYSTEM_NAME);
+  indexData.replace("{{STRIP}}", String(strip));
   sendResult(indexData);
 }
 
@@ -287,23 +311,37 @@ static void handleSetup() {
 }
 
 
-extern void initServer() {
+void initServer(Settings *settings, State *state, Led **led) {
   // Start the server
-  server.on("/", HTTP_GET, handleIndex);
-  server.on("/", HTTP_POST, handleSet);
-  server.on("/spa", HTTP_GET, handleSpa);
-  server.on("/switch", HTTP_GET, handleSet);
-  server.on("/api", HTTP_GET, handleApiGet);
-  server.on("/api", HTTP_POST, handleApiPost);
+  server.on("/", HTTP_GET, [=]() { handleIndex(settings[0], state[0], *led[0], STRIP_SETTINGS[0], 0); });
+  server.on("/", HTTP_POST, [=]() { handleSet(settings[0], state[0], *led[0], STRIP_SETTINGS[0], 0); });
+  server.on("/spa", HTTP_GET, [=]() { handleSpa(settings[0], state[0], STRIP_SETTINGS[0], 0); });
+  server.on("/switch", HTTP_GET, [=]() { handleSet(settings[0], state[0], *led[0], STRIP_SETTINGS[0], 0); });
+  server.on("/api", HTTP_GET, [=]() { handleApiGet(settings[0], state[0]); });
+  server.on("/api", HTTP_POST, [=]() { handleApiPost(settings[0], state[0], STRIP_SETTINGS[0]); });
+  server.on("/leds", HTTP_GET, [=]() { handleLedsGet(*led[0]); });
   server.on("/setup", HTTP_POST, handleSetup);
   server.on("/setup", HTTP_GET, handleSetupRedir);
+  Serial.println(String("Setting up ") + String(NUM_STRIPS) + " strip routes");
+  for (uint8_t i = 0; i < NUM_STRIPS; i++) {
+    String strip(i);
+    Serial.println("Setting routes for /" + strip);
+    server.on("/" + strip, HTTP_GET, [=]() { handleIndex(settings[i], state[i], *led[i], STRIP_SETTINGS[i], i); });
+    server.on("/" + strip, HTTP_POST, [=]() { handleSet(settings[i], state[i], *led[i], STRIP_SETTINGS[i], i); });
+    server.on("/spa/" + strip, HTTP_GET, [=]() { handleSpa(settings[i], state[i], STRIP_SETTINGS[i], i); });
+    server.on("/switch/" + strip, HTTP_GET, [=]() { handleSet(settings[i], state[i], *led[i], STRIP_SETTINGS[i], i); });
+    server.on("/api/" + strip, HTTP_GET, [=]() { handleApiGet(settings[i], state[i]); });
+    server.on("/api/" + strip, HTTP_POST, [=]() { handleApiPost(settings[i], state[i], STRIP_SETTINGS[i]); });
+    server.on("/leds/" + strip, HTTP_GET, [=]() { handleLedsGet(*led[i]); });
+  }
+  Serial.println("Route Setup done");
   server.begin();
   serverSetupDone = true;
   Serial.print("Server started on ");
   Serial.println(WiFi.localIP());
 }
 
-extern void handleServer() {
+void handleServer() {
   if (serverSetupDone) {
       server.handleClient();
   }

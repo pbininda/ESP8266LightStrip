@@ -10,12 +10,12 @@ const settingsFile = 'settings.h';
 
 const defineRegEx = /<!-- ([A-Z_]+) -->/gm;
 console.log('parsing', inFile);
-const settingsData = fs.readFileSync(settingsFile).toString();
-const tag = '#define SYSTEM_NAME';
-const tag_start = settingsData.indexOf(tag) + tag.length;
-const line_end = settingsData.indexOf('\n', tag_start);
-const SYSTEM_NAME = settingsData.substr(tag_start, line_end - tag_start).trim().replace(/"/g, '');
-console.log('system name:', SYSTEM_NAME);
+// const settingsData = fs.readFileSync(settingsFile).toString();
+// const tag = '#define SYSTEM_NAME';
+// const tag_start = settingsData.indexOf(tag) + tag.length;
+// const line_end = settingsData.indexOf('\n', tag_start);
+// const SYSTEM_NAME = settingsData.substr(tag_start, line_end - tag_start).trim().replace(/"/g, '');
+// console.log('system name:', SYSTEM_NAME);
 
 fs.readFile(inFile, 'utf8', function (err,data) {
   if (err) {
@@ -59,7 +59,7 @@ fs.readFile(inFile, 'utf8', function (err,data) {
           string += ' ';
         }
         string += '= "' + def + '";\n';
-        string = string.replaceAll("%SYSTEM_NAME%", SYSTEM_NAME);
+//        string = string.replaceAll("%SYSTEM_NAME%", SYSTEM_NAME);
         stream.write(string);
       }
     }

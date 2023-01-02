@@ -5,7 +5,7 @@
         <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>
         <meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">
         <link rel="shortcut icon" type="image/x-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAADUUlEQVR4nO3aPYgeRQDG8V/OI4QQDwkSLMIRJIU2pvAKqyiopEthgp9o4QcKepVFEBEGLIKYJqiIRGz8KAQ/apFDRawEUSRFQAlyHAElhKtEjsNi38sd7zvc7ezMvhO9/Xc3884zzz47Ozszt3tMi2Av7sFxHMMR3DKqvYbL+Bnf4wfBP9Owtaf3HoKjWMTjuLVlq7/wCc4Lfu/LGn0GEBzEWTyN2Y4qa3gfrwqulrK2lX4CCB7Ah7itkOIKnhQsFdK7zk2lBQUv4GPMFVS9GU+4z5++8WNB3cIjIHgJb23zixV8jm9xcfT3LA7hKO7Facxvo7EoeLuIXyUDCE7iC8xEalfwGj7acXYPZvGoZv44HPnFOk4JvszyO6JMAME8fsLBSO2neE6wmqg5hwt4OFK7imOCy2lGJ4ndrS6cF7/4c4JHki8eozaP4Vykdg7vJmtGyB8BwXHNMz3OB4JnsvWbPi7g2UjNCcFXOdIlRsArkbJf8WIB7Q0W8UvLvpPIGwHBEfxmMsj7i7+z4yNtHXcKLnWVzR0BpyMaS30sWATf4eux0hk8lCObG8CJSNk7mZrbEdN+MEewewDBDBbGStfp4e5vsjTqYysLIy+dyBkB+21uZzdYFVzL0Nye5tU4rj8nY9mdE8CBSFn6+z6dWB/7u4rlBLA3UjaNQ4xYHzEvrcgJILbHX8vQa0ssgK7nDVkBxNpOI4DxSZCM6ygdQMxcaWJ9VBkBsU6nEUBslO2qERBjVwVwQz8C02CYBCNluyqAGJ2vo/15QHPu9yZuxz7NPmD80PJv8s/pdmDe5NJ3WbNH2Oj/ZcEfbcRSnuPPTO7+xtmHOxI0S3HY5s1Y0Nyku9s0TBk6dyWaqklrrykB1Jr1u9Daa0oApY7Qbyj+lxeVQkoAtV5xvZISwDS2uqVo7TUlgIsdjNSitdeUmf0U3tP+M5daXMXztU0M/Ffo8yOpN0x+I3RGcGWHdoc0e46tXBGcKejuOn2u7k6a3Be83qLdATw1VnaJfgIYFkK1DdRmCKC2gdoMAdQ2UJshgNoGajMEUNtAbYYAahuozRBAbQO1GQKobaA2QwC1DdRmCKC2gdoMAdQ2UJs+j8WXNZ/MbKXNPy3XTH5ntFzCUIx/AUgEjN7/qE0VAAAAAElFTkSuQmCC">
-        <title>%SYSTEM_NAME%</title>
+        <title>{{SYSTEM_NAME}}</title>
         <style>
             .c {
                 text-align:center;
@@ -83,6 +83,16 @@
                 display: inline-block;
                 border: 2px solid black;
                 box-sizing: border-box;
+            }
+            #led-strip {
+                width: 100%;
+                display: flex;
+                gap: 1%;
+            }
+            #led-strip span {
+                height: 20px;
+                flex-grow: 1;
+                display: block;
             }
             body {
                 width: 85%;
@@ -231,6 +241,17 @@
                 });
             }
 
+            function handleLedsResponse(response) {
+                const strip = document.querySelector('#led-strip');
+                const html = response.leds.map((c) => {
+                    let r = Math.round(c.r * c.w / 32.0);
+                    let g = Math.round(c.g * c.w / 32.0);
+                    let b = Math.round(c.b * c.w / 32.0);
+                    return `<span style="background-color: rgb(${r}, ${g}, ${b})"></span>`;
+                }).join(' ');
+                strip.innerHTML = html;
+            }
+
             function sendState() {
                 handleResponse(currentState);
                 sendingState = true;
@@ -241,7 +262,7 @@
                     }
                 };
                 request.responseType = 'json';
-                request.open('POST', targetApi + '/api');
+                request.open('POST', targetApi + '/api/{{STRIP}}');
                 request.send(JSON.stringify(currentState));
             }
 
@@ -262,13 +283,31 @@
                     }
                 };
                 request.responseType = 'json';
-                request.open('GET', targetApi + '/api');
+                request.open('GET', targetApi + '/api/{{STRIP}}');
+                request.send();
+            }
+
+            function reloadLeds(done) {
+                let request = new XMLHttpRequest();
+                request.onreadystatechange = function() {
+                    if (request.readyState === 4) {
+                        if (request.status === 200) {
+                            handleLedsResponse(request.response);
+                        }
+                        if (done) {
+                            done();
+                        }
+                    }
+                };
+                request.responseType = 'json';
+                request.open('GET', targetApi + '/leds/{{STRIP}}');
                 request.send();
             }
 
             function periodicReload() {
                 if (!sendingState) {
                     requesting = true;
+                    reloadLeds();
                     reload(function() {
                         requesting = false;
                         maybeReload(2000);
@@ -343,6 +382,10 @@
                     <span class="mode" data-mode="0" onclick="onModeClicked(0)">Fest</span>
                     <span class="mode" data-mode="1" onclick="onModeClicked(1)">Zylon</span>
                     <span class="mode" data-mode="2" onclick="onModeClicked(2)">Farbrad</span>
+                </div>
+            </p>
+            <p>
+                <div id="led-strip">
                 </div>
             </p>
         </div>

@@ -1,6 +1,6 @@
 #define FASTLED_USE_GLOBAL_BRIGHTNESS 1
-
 #include <FastLED.h>
+
 #include "settings.h"
 #include "LED.h"
 #include "state.h"
@@ -13,33 +13,32 @@ static const int CLOCK_PIN = 19;
 static const int TEST_PIN = 23;
 static int toggle = 0;
 
-typedef struct internal_rgbw {
-  uint8_t r;
-  uint8_t g;
-  uint8_t b;
-  uint8_t w;
-} INTERNAL_RGBW;
+Led::Led(uint8_t stripNo, const State &state) :
+    stripSettings(STRIP_SETTINGS[stripNo]),
+    stripNo(stripNo),
+    state(state),
+    leds(new INTERNAL_RGBW[stripSettings.NUM_LEDS + 1]),
+    fastLeds(new CRGB[stripSettings.NUM_LEDS + 1])
+{
+}
 
-static INTERNAL_RGBW leds[NUM_LEDS + 1];
-
-static CRGBArray<NUM_LEDS + 1> fastLeds;
-
-static bool ledsChanged = false;
-static time_t lastLedChange = 0;
-
-static void setLed(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
+void Led::setLed(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
   setLedc(n, ledColor(r, g, b, w));
 }
 
-uint32_t getLed(uint16_t n) {
+uint32_t Led::getLed(uint16_t n) const {
     return ledColor(leds[n].r, leds[n].g, leds[n].b, leds[n].w);
 }
 
-time_t getLastLedChangeDelta() {
+INTERNAL_RGBW Led::getLedc(uint16_t n) const {
+  return leds[n];
+}
+
+time_t Led::getLastLedChangeDelta() const {
   return state.now - lastLedChange;
 }
 
-uint32_t ledColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
+uint32_t Led::ledColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w) const {
   uint32_t c = w;
   c <<= 8;
   c |= r;
@@ -50,7 +49,7 @@ uint32_t ledColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
   return c;
 }
 
-void setLedc(uint16_t n, uint32_t c) {
+void Led::setLedc(uint16_t n, uint32_t c) {
   uint32_t oldC = getLed(n);
   if (oldC != c) {
     lastLedChange = state.now;
@@ -73,7 +72,7 @@ void setLedc(uint16_t n, uint32_t c) {
   }
 }
 
-bool sendLeds() {
+bool Led::sendLeds() {
   digitalWrite(TEST_PIN, toggle ? HIGH : LOW);
   toggle = !toggle;
   if (ledsChanged) {
@@ -85,10 +84,10 @@ bool sendLeds() {
       }
       Serial.println();
     }
-    setLed(NUM_LEDS, 0, 0, 0, 0);
-    for (int i = 0; i < NUM_LEDS + 1; i++) {
-      fastLeds[i] = CRGB(leds[i].r, leds[i].g, leds[i].b);
-      fastLeds[i].nscale8(leds[i].w * 8);
+    setLed(stripSettings.NUM_LEDS, 0, 0, 0, 0);
+    for (int i = 0; i < stripSettings.NUM_LEDS + 1; i++) {
+      ((CRGB *)fastLeds)[i] = CRGB(leds[i].r, leds[i].g, leds[i].b);
+      ((CRGB *)fastLeds)[i].nscale8(leds[i].w * 8);
     }
     FastLED.show();
     ledsChanged = false;
@@ -102,13 +101,13 @@ bool sendLeds() {
   }
 }
 
-void initLeds() {
+void Led::initLeds() {
   Serial.println("FastLED");
   pinMode(TEST_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
   pinMode(CLOCK_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
   digitalWrite(CLOCK_PIN, HIGH);
-  FastLED.addLeds<APA102, LED_PIN, CLOCK_PIN, BGR, DATA_RATE_MHZ(1)>(fastLeds, NUM_LEDS + 1);
+  FastLED.addLeds<APA102, LED_PIN, CLOCK_PIN, BGR, DATA_RATE_MHZ(1)>((CRGB *)fastLeds, stripSettings.NUM_LEDS + 1);
   sendLeds(); // Initialize all pixels to 'off'
 }

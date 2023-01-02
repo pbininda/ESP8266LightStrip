@@ -26,19 +26,19 @@ void initWiFi() {
     Serial.print(":");
     Serial.print(MAC[i],HEX);
   }
-  wifiManager.autoConnect(SYSTEM_NAME);
+  wifiManager.autoConnect(STRIP_SETTINGS[0].SYSTEM_NAME);
   // WiFi.setSleepMode(WIFI_NONE_SLEEP);
 }
 
-void handleWiFi() {
+void handleWiFi(Led **leds) {
   if (!wiFiSetupDone) {
     if (WiFi.status() == WL_CONNECTED) {
       Serial.println("");
-      Serial.println(SYSTEM_NAME);
+      Serial.println(STRIP_SETTINGS[0].SYSTEM_NAME);
       Serial.println("WiFi connected");
 //      wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
       Serial.println("initializing server\r\n");
-      initServer();
+      initServer(strip_settings, strip_states, leds);
       Serial.println("ready for commands\r\n");
       initOta();
       wiFiSetupDone = true;
