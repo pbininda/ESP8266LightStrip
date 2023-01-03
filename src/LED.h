@@ -29,11 +29,11 @@ class Led {
 
         template<uint8_t LED_PIN, uint8_t CLOCK_PIN>
         void initLeds() {
-            Serial.println("FastLED");
-            pinMode(ledPin, OUTPUT);
-            pinMode(clockPin, OUTPUT);
-            digitalWrite(ledPin, HIGH);
-            digitalWrite(clockPin, HIGH);
+            Serial.println(String("FastLED ledPin: ") + String(LED_PIN) + String(" clockPin: ") + String(CLOCK_PIN));
+            pinMode(LED_PIN, OUTPUT);
+            pinMode(CLOCK_PIN, OUTPUT);
+            digitalWrite(LED_PIN, HIGH);
+            digitalWrite(CLOCK_PIN, HIGH);
             FastLED.addLeds<APA102, LED_PIN, CLOCK_PIN, BGR, DATA_RATE_MHZ(1)>((CRGB *)fastLeds, stripSettings.NUM_LEDS + 1);
             sendLeds(); // Initialize all pixels to 'off'
         }
@@ -48,8 +48,6 @@ class Led {
         void *fastLeds;
         bool ledsChanged = false;
         time_t lastLedChange = 0;
-        uint8_t ledPin;
-        uint8_t clockPin;
 
 };
 
