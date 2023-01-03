@@ -1,6 +1,3 @@
-#define FASTLED_USE_GLOBAL_BRIGHTNESS 1
-#include <FastLED.h>
-
 #include "settings.h"
 #include "LED.h"
 #include "state.h"
@@ -10,8 +7,6 @@ static const int DEBUG_LED_NO_OUT = 0;
 static const int NUM_LED_DEBUG = 4;
 static const int LED_PIN = 21;
 static const int CLOCK_PIN = 19;
-static const int TEST_PIN = 23;
-static int toggle = 0;
 
 Led::Led(uint8_t stripNo, const State &state) :
     stripSettings(STRIP_SETTINGS[stripNo]),
@@ -73,8 +68,6 @@ void Led::setLedc(uint16_t n, uint32_t c) {
 }
 
 bool Led::sendLeds() {
-  digitalWrite(TEST_PIN, toggle ? HIGH : LOW);
-  toggle = !toggle;
   if (ledsChanged) {
     if (DEBUG_LED) {
       Serial.print("LEDs: ");
@@ -99,15 +92,4 @@ bool Led::sendLeds() {
     }
     return false;
   }
-}
-
-void Led::initLeds() {
-  Serial.println("FastLED");
-  pinMode(TEST_PIN, OUTPUT);
-  pinMode(LED_PIN, OUTPUT);
-  pinMode(CLOCK_PIN, OUTPUT);
-  digitalWrite(LED_PIN, HIGH);
-  digitalWrite(CLOCK_PIN, HIGH);
-  FastLED.addLeds<APA102, LED_PIN, CLOCK_PIN, BGR, DATA_RATE_MHZ(1)>((CRGB *)fastLeds, stripSettings.NUM_LEDS + 1);
-  sendLeds(); // Initialize all pixels to 'off'
 }

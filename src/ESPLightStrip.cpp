@@ -32,9 +32,9 @@ static void initState() {
 }
 
 static void initLeds() {
-  for (uint8_t i = 0; i < NUM_STRIPS; i++) {
-    leds[i]->initLeds();
-  }
+  leds[0]->initLeds<STRIP_SETTINGS[0].LED_PIN, STRIP_SETTINGS[0].CLOCK_PIN>();
+  leds[1]->initLeds<STRIP_SETTINGS[1].LED_PIN, STRIP_SETTINGS[1].CLOCK_PIN>();
+  leds[2]->initLeds<STRIP_SETTINGS[0].LED_PIN, STRIP_SETTINGS[2].CLOCK_PIN>();
 }
 
 static void setLeds() {
