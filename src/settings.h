@@ -14,27 +14,27 @@ typedef struct StripSettings {
     uint8_t CLOCK_PIN;
 } StripSettings;
 
-static const uint8_t NUM_STRIPS = 3;
+static const uint8_t NUM_STRIPS = 2;
 
 static constexpr StripSettings STRIP_SETTINGS[NUM_STRIPS] = {
     {
         10,
         10,
-        "Generisches Licht 1",
+        "Bettlicht 1 Kopf",
         21, 19,
     },
     {
         5,
         20,
-        "Generisches Licht 2",
+        "Bettlicht 1 Seite",
         18, 17
     },
-    {
-        20,
-        30,
-        "Generisches Licht 3",
-        16, 15
-    },
+    // {
+    //     20,
+    //     30,
+    //     "Generisches Licht 3",
+    //     16, 15
+    // },
 };
 
 #endif

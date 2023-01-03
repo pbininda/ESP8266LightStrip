@@ -24,7 +24,7 @@ static void printSettings() {
     Serial.print("rise: "); Serial.print(settings.rise);
     Serial.print("    fall: "); Serial.println(settings.fall);
     Serial.print("cylcle: "); Serial.println(settings.cycle);
-    Serial.print("onoffmode: "); Serial.print(settings.onoffmode);
+    Serial.print("onoffmode: "); Serial.println(settings.onoffmode);
   }
 }
 
