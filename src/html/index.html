@@ -262,7 +262,7 @@
                     }
                 };
                 request.responseType = 'json';
-                request.open('POST', targetApi + '/api/{{STRIP}}');
+                request.open('POST', targetApi + '/api{{STRIP}}');
                 request.send(JSON.stringify(currentState));
             }
 
@@ -283,7 +283,7 @@
                     }
                 };
                 request.responseType = 'json';
-                request.open('GET', targetApi + '/api/{{STRIP}}');
+                request.open('GET', targetApi + '/api{{STRIP}}');
                 request.send();
             }
 
@@ -300,7 +300,7 @@
                     }
                 };
                 request.responseType = 'json';
-                request.open('GET', targetApi + '/leds/{{STRIP}}');
+                request.open('GET', targetApi + '/leds{{STRIP}}');
                 request.send();
             }
 

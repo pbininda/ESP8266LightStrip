@@ -56,7 +56,8 @@ static String numInput(const char *label, const char *name, long min, long max, 
   return String("<label>") + label + ":</label><input name=\"" + name + "\" type=\"number\" min=\"" + String(min) + " \" max=\"" + String(max) + "\" value=\"" + String(value) + "\"></p>";
 }
 
-static String formBody(const Settings &settings, uint8_t strip) {
+static String formBody(const Settings &settings, int8_t strip) {
+  String strp = strip < 0 ? "" : String(strip);
   String res("<form action=\"/{{STRIP}}\" method=\"post\">");
   res += String("<p>") + numInput("On", "on", 0, 1, settings.on) + numInput("Mode", "mode", 0, NUM_MODES - 1, settings.mode) + numInput("OnOff Mode", "onoffmode", 0, ONOFFMODE_LAST - 1, settings.onoffmode) + "</p>";
   res += String("<p>") + numInput("R", "red", 0, 255, settings.r);
@@ -73,7 +74,7 @@ static String formBody(const Settings &settings, uint8_t strip) {
   res += "<form action=\"/setup\" method=\"post\">";
   res += "<button type=\"submit\">Reset WiFi</button>";
   res += "</form>\r\n";
-  res.replace("{{STRIP}}", String(strip));
+  res.replace("{{STRIP}}", strp);
   return res;
 }
 
@@ -152,9 +153,11 @@ static void handleIndex(Settings &settings, State &state, const Led &led, const 
   sendResult(head(stripSettings) + formBody(settings, strip) + statusBody(state, led) + tail());
 }
 
-static void handleSet(Settings &settings, State &state, const Led &led, const StripSettings &stripSettings, uint8_t strip) {
+static void handleSet(Settings &settings, State &state, const Led &led, const StripSettings &stripSettings, uint8_t strip, bool sendRes) {
   extractArgs(settings, state);
-  sendResult(head(stripSettings) + formBody(settings, strip) + statusBody(state, led) + "<p>sent command</p>\r\n" + tail());
+  if (sendRes) {
+    sendResult(head(stripSettings) + formBody(settings, strip) + statusBody(state, led) + "<p>sent command</p>\r\n" + tail());
+  }
 }
 
 static void handleApiGet(const Settings &settings, const State &state) {
@@ -201,7 +204,7 @@ static void handleApiGet(const Settings &settings, const State &state) {
   sendJsonResult(jsonString);
 }
 
-static void handleApiPost(Settings &settings, State &state, const StripSettings &stripSettings) {
+static void handleApiPost(Settings &settings, State &state, const StripSettings &stripSettings, bool sendResult) {
   Serial.println("got post");
   bool wasOn = settings.on;
   DynamicJsonDocument jsonDocument(1536);
@@ -265,8 +268,10 @@ static void handleApiPost(Settings &settings, State &state, const StripSettings 
       settings.mode = jsSettings["mode"];
     }
   }
-  sendJsonResult("\"OK\"");
   processSettings(settings, state, wasOn);
+  if (sendResult) {
+    sendJsonResult("\"OK\"");
+  }
 }
 
 static void handleLedsGet(const Led &led) {
@@ -292,11 +297,12 @@ static String index() {
   return res;
 }
 
-static void handleSpa(Settings &settings, State &state, const StripSettings &stripSettings, uint8_t strip) {
+static void handleSpa(Settings &settings, State &state, const StripSettings &stripSettings, int8_t strip) {
+  String strp = strip < 0 ? "" : String("/") + String(strip);
   extractArgs(settings, state);
   String indexData = index();
   indexData.replace("{{SYSTEM_NAME}}", stripSettings.STRIP_NAME);
-  indexData.replace("{{STRIP}}", String(strip));
+  indexData.replace("{{STRIP}}", strp);
   sendResult(indexData);
 }
 
@@ -313,12 +319,19 @@ static void handleSetup() {
 
 void initServer(Settings *settings, State *state, Led **led) {
   // Start the server
-  server.on("/", HTTP_GET, [=]() { handleIndex(settings[0], state[0], *led[0], STRIP_SETTINGS[0], 0); });
-  server.on("/", HTTP_POST, [=]() { handleSet(settings[0], state[0], *led[0], STRIP_SETTINGS[0], 0); });
-  server.on("/spa", HTTP_GET, [=]() { handleSpa(settings[0], state[0], STRIP_SETTINGS[0], 0); });
-  server.on("/switch", HTTP_GET, [=]() { handleSet(settings[0], state[0], *led[0], STRIP_SETTINGS[0], 0); });
+  server.on("/", HTTP_GET, [=]() { handleIndex(settings[0], state[0], *led[0], STRIP_SETTINGS[0], -1); });
+  server.on("/", HTTP_POST, [=]() { 
+    for (uint8_t i = 0; i < NUM_STRIPS; i++) {
+      handleSet(settings[i], state[i], *led[i], STRIP_SETTINGS[i], -1, i == NUM_STRIPS - 1);
+    }
+  });
+  server.on("/spa", HTTP_GET, [=]() { handleSpa(settings[0], state[0], STRIP_SETTINGS[0], -1); });
   server.on("/api", HTTP_GET, [=]() { handleApiGet(settings[0], state[0]); });
-  server.on("/api", HTTP_POST, [=]() { handleApiPost(settings[0], state[0], STRIP_SETTINGS[0]); });
+  server.on("/api", HTTP_POST, [=]() { 
+    for (uint8_t i = 0; i < NUM_STRIPS; i++) {
+      handleApiPost(settings[i], state[i], STRIP_SETTINGS[i], i == NUM_STRIPS - 1);
+    }
+  });
   server.on("/leds", HTTP_GET, [=]() { handleLedsGet(*led[0]); });
   server.on("/setup", HTTP_POST, handleSetup);
   server.on("/setup", HTTP_GET, handleSetupRedir);
@@ -327,11 +340,10 @@ void initServer(Settings *settings, State *state, Led **led) {
     String strip(i);
     Serial.println("Setting routes for /" + strip);
     server.on("/" + strip, HTTP_GET, [=]() { handleIndex(settings[i], state[i], *led[i], STRIP_SETTINGS[i], i); });
-    server.on("/" + strip, HTTP_POST, [=]() { handleSet(settings[i], state[i], *led[i], STRIP_SETTINGS[i], i); });
+    server.on("/" + strip, HTTP_POST, [=]() { handleSet(settings[i], state[i], *led[i], STRIP_SETTINGS[i], i, true); });
     server.on("/spa/" + strip, HTTP_GET, [=]() { handleSpa(settings[i], state[i], STRIP_SETTINGS[i], i); });
-    server.on("/switch/" + strip, HTTP_GET, [=]() { handleSet(settings[i], state[i], *led[i], STRIP_SETTINGS[i], i); });
     server.on("/api/" + strip, HTTP_GET, [=]() { handleApiGet(settings[i], state[i]); });
-    server.on("/api/" + strip, HTTP_POST, [=]() { handleApiPost(settings[i], state[i], STRIP_SETTINGS[i]); });
+    server.on("/api/" + strip, HTTP_POST, [=]() { handleApiPost(settings[i], state[i], STRIP_SETTINGS[i], true); });
     server.on("/leds/" + strip, HTTP_GET, [=]() { handleLedsGet(*led[i]); });
   }
   Serial.println("Route Setup done");
