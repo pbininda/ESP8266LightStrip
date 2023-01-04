@@ -102,7 +102,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
   Serial.println();
-  Serial.println(String("initializing LED Strip for ") + STRIP_SETTINGS[0].SYSTEM_NAME + "\r\n");
+  Serial.println(String("initializing LED Strip for ") + SYSTEM_NAME + "\r\n");
   initData();
   readSettings();
   initState();

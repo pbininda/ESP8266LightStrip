@@ -26,7 +26,7 @@ void initWiFi() {
     Serial.print(":");
     Serial.print(MAC[i],HEX);
   }
-  wifiManager.autoConnect(STRIP_SETTINGS[0].SYSTEM_NAME);
+  wifiManager.autoConnect(SYSTEM_NAME);
   // WiFi.setSleepMode(WIFI_NONE_SLEEP);
 }
 
@@ -34,7 +34,7 @@ void handleWiFi(Led **leds) {
   if (!wiFiSetupDone) {
     if (WiFi.status() == WL_CONNECTED) {
       Serial.println("");
-      Serial.println(STRIP_SETTINGS[0].SYSTEM_NAME);
+      Serial.println(SYSTEM_NAME);
       Serial.println("WiFi connected");
 //      wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
       Serial.println("initializing server\r\n");

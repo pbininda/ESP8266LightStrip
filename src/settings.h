@@ -9,22 +9,23 @@ typedef struct StripSettings {
     // lenght of connected LED strip
     uint8_t MAX_BRI2;
     // maximum allowed brightness leve (Max: 32)
-    const char * SYSTEM_NAME;
+    const char * STRIP_NAME;
     uint8_t LED_PIN;
     uint8_t CLOCK_PIN;
 } StripSettings;
 
-static const uint8_t NUM_STRIPS = 2;
+#define SYSTEM_NAME "Bettlicht 1"
 
+static const uint8_t NUM_STRIPS = 2;
 static constexpr StripSettings STRIP_SETTINGS[NUM_STRIPS] = {
     {
         10,
-        10,
+        20,
         "Bettlicht 1 Kopf",
         21, 19,
     },
     {
-        5,
+        10,
         20,
         "Bettlicht 1 Seite",
         18, 17

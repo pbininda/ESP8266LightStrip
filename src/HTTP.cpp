@@ -18,7 +18,7 @@ static const char HEAD_1[] PROGMEM = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<me
 static const char HEAD_2[] PROGMEM = "</title>\r\n</hread>\r\n<body>\r\n";
 
 static String head(const StripSettings &stripSettings) {
-  return String(HEAD_1) + stripSettings.SYSTEM_NAME + HEAD_2;
+  return String(HEAD_1) + stripSettings.STRIP_NAME + HEAD_2;
 }
 
 static String tail() {
@@ -295,7 +295,7 @@ static String index() {
 static void handleSpa(Settings &settings, State &state, const StripSettings &stripSettings, uint8_t strip) {
   extractArgs(settings, state);
   String indexData = index();
-  indexData.replace("{{SYSTEM_NAME}}", stripSettings.SYSTEM_NAME);
+  indexData.replace("{{SYSTEM_NAME}}", stripSettings.STRIP_NAME);
   indexData.replace("{{STRIP}}", String(strip));
   sendResult(indexData);
 }
