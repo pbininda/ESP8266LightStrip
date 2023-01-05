@@ -14,28 +14,31 @@ typedef struct StripSettings {
     uint8_t CLOCK_PIN;
 } StripSettings;
 
+#ifdef BADOBEN
+// IP 192.168.1.58
+#define SYSTEM_NAME "Bad Oben"
+static const uint8_t NUM_STRIPS = 1;
+static constexpr StripSettings STRIP_SETTINGS[NUM_STRIPS] = {
+    { 69, 20, "Bad Oben", 21, 19 },
+};
+#elif BETT1
+// IP 192.168.1.136
 #define SYSTEM_NAME "Bettlicht 1"
-
 static const uint8_t NUM_STRIPS = 2;
 static constexpr StripSettings STRIP_SETTINGS[NUM_STRIPS] = {
-    {
-        10,
-        20,
-        "Bettlicht 1 Kopf",
-        21, 19,
-    },
-    {
-        10,
-        20,
-        "Bettlicht 1 Seite",
-        18, 17
-    },
-    // {
-    //     20,
-    //     30,
-    //     "Generisches Licht 3",
-    //     16, 15
-    // },
+    { 10, 20, "Bettlicht 1 Kopf", 21, 19 },
+    { 10, 20, "Bettlicht 1 Seite", 18, 17 },
 };
+#elif BETT2
+// IP 192.168.1.137
+#define SYSTEM_NAME "Bettlicht 2"
+static const uint8_t NUM_STRIPS = 2;
+static constexpr StripSettings STRIP_SETTINGS[NUM_STRIPS] = {
+    { 10, 20, "Bettlicht 2 Kopf", 21, 19 },
+    { 10, 20, "Bettlicht 2 Seite", 18, 17 },
+};
+#else
+#error define a system config
+#endif
 
 #endif
