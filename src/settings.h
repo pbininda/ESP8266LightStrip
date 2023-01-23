@@ -26,16 +26,23 @@ static constexpr StripSettings STRIP_SETTINGS[NUM_STRIPS] = {
 #define SYSTEM_NAME "Bettlicht 1"
 static const uint8_t NUM_STRIPS = 2;
 static constexpr StripSettings STRIP_SETTINGS[NUM_STRIPS] = {
-    { 10, 20, "Bettlicht 1 Kopf", 21, 19 },
-    { 10, 20, "Bettlicht 1 Seite", 18, 17 },
+    { 60, 31, "Bettlicht 1 Kopf", 21, 19 },
+    { 120, 16, "Bettlicht 1 Seite", 18, 17 },
 };
 #elif BETT2
 // IP 192.168.1.137
 #define SYSTEM_NAME "Bettlicht 2"
 static const uint8_t NUM_STRIPS = 2;
 static constexpr StripSettings STRIP_SETTINGS[NUM_STRIPS] = {
-    { 10, 20, "Bettlicht 2 Kopf", 21, 19 },
-    { 10, 20, "Bettlicht 2 Seite", 18, 17 },
+    { 60, 31, "Bettlicht 2 Kopf", 21, 19 },
+    { 120, 16, "Bettlicht 2 Seite", 18, 17 },
+};
+#elif KUECHE1
+// IP 192.168.1.56
+#define SYSTEM_NAME "Kueche"
+static const uint8_t NUM_STRIPS = 1;
+static constexpr StripSettings STRIP_SETTINGS[NUM_STRIPS] = {
+    { 105, 31, "Kueche 1", 21, 19 },
 };
 #else
 #error define a system config
