@@ -76,8 +76,10 @@ static uint16_t cyclePos(const State &state, const Settings &settings) {
   return cycle * 1024 / settings.cycle;
 }
 
-void Effects::setLedsFixed(uint32_t c) {
+void Effects::setLedsFixed() {
   for (uint16_t i = 0; i < stripSettings.NUM_LEDS; i++) {
+    struct palette p = dynGradColor(i);
+    uint32_t c = led.ledColor(p.r, p.g, p.b, settings.bri2);
     setDynLed(state, settings, led, stripSettings, i, c);
   }
 }
@@ -99,14 +101,55 @@ void Effects::setLedsZylon() {
     swipeTPos = 512 - swipeTPos;
   }
   const int16_t swipePos = swipeTPos * stripSettings.NUM_LEDS / 512;
-  uint32_t cLow = led.ledColor(state.dynR, state.dynG, state.dynB, briOff);
-  uint32_t cHigh = led.ledColor(state.dynR, state.dynG, state.dynB, briOn);
   for (uint16_t i = 0; i < stripSettings.NUM_LEDS; i++) {
+    struct palette p = dynGradColor(i);
+    uint32_t cLow = led.ledColor(p.r, p.g, p.b, briOff);
+    uint32_t cHigh = led.ledColor(p.r, p.g, p.b, briOn);
     if (i < swipePos - swipeHalfWidth || i > swipePos + swipeHalfWidth) {
       setDynLed(state, settings, led, stripSettings, i, cLow);
     }
     else {
       setDynLed(state, settings, led, stripSettings, i, cHigh);
     }
+  }
+}
+
+
+struct palette Effects::dynGradColor(uint16_t ledIdx) const {
+  if (settings.ngradient <= 1) {
+    return {
+      r: (uint8_t) (state.dynFactor * settings.palette[settings.colidx].r / 256),
+      g: (uint8_t) (state.dynFactor * settings.palette[settings.colidx].g / 256),
+      b: (uint8_t) (state.dynFactor * settings.palette[settings.colidx].b / 256)
+    };
+  } else {
+    // example:
+    // NUM_LEDS = 10
+    // ngradient = 2
+    // gradLen = 10 / 1 = 10
+    // gradnum(0) = 0, gradnum(4) = 0, gradnum(5) = 0, gradnum(9) = 0
+    // gradPos(0) = 0, gradPos(4) = 4, gradnum(5) = 5, gradpos(9) = 9
+    // pos256(0)  = 
+    // NUM_LEDS = 10
+    // ngradient = 3
+    // gradnum(0) = 0, gradnum(4) = 0, gradnum(5) = 1, gradnum(9) = 1
+    uint8_t gradNum1 = ledIdx * (settings.ngradient - 1) / stripSettings.NUM_LEDS;
+    uint8_t gradNum2 = (gradNum1 + 1);
+    uint16_t gradLen = stripSettings.NUM_LEDS / (settings.ngradient - 1);
+    uint16_t gradPos = ledIdx - gradLen * gradNum1;
+    uint32_t gradPos256 = gradPos * 255 / gradLen;
+    const struct palette p1 = settings.palette[(settings.colidx + gradNum1) % NUM_PALETTE];
+    const struct palette p2 = settings.palette[(settings.colidx + gradNum2) % NUM_PALETTE];
+    uint32_t r = (p1.r * (255 - gradPos256) + p2.r * gradPos256) / 256;
+    if (r > 255) r = 255;
+    uint32_t g = (p1.g * (255 - gradPos256) + p2.g * gradPos256) / 256;
+    if (g > 255) g = 255;
+    uint32_t b = (p1.b * (255 - gradPos256) + p2.b * gradPos256) / 256;
+    if (b > 255) b = 255;
+    return {
+      r: (uint8_t) (state.dynFactor * r / 256),
+      g: (uint8_t) (state.dynFactor * g / 256),
+      b: (uint8_t) (state.dynFactor * b / 256)
+    };
   }
 }

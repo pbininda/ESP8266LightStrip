@@ -15,10 +15,13 @@ class Effects {
         {
         }
 
-        void setLedsFixed(uint32_t c);
+        void setLedsFixed();
         void setLedsZylon();
         void setLedsRainbowCycle();
-    
+
+        struct palette dynGradColor(uint16_t ledIdx) const;
+
+
     private:
         uint8_t stripNo;
         const StripSettings &stripSettings;

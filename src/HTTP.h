@@ -3,8 +3,9 @@
 
 #include "state.h"
 #include "led.h"
+#include "effects.h"
 
-extern void initServer(Settings *settings, State *state, Led **led);
+extern void initServer(Settings *settings, State *state, Led **led, Effects **effects);
 extern void handleServer();
 
 #endif

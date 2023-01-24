@@ -1,0 +1,10 @@
+call .\setpal.cmd espbett1 0 255 1 1
+call .\setpal.cmd espbett1 1 255 180 180
+call .\setpal.cmd espbett1 2 255 1 1
+call .\setpal.cmd espbett1 3 255 1 180
+call .\setpal.cmd espbett1 4 255 1 1
+call .\setpal.cmd espbett2 0 255 1 1
+call .\setpal.cmd espbett2 1 255 180 180
+call .\setpal.cmd espbett2 2 255 1 1
+call .\setpal.cmd espbett2 3 255 1 180
+call .\setpal.cmd espbett2 4 255 1 1

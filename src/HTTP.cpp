@@ -33,7 +33,7 @@ static void sendJsonResult(const String resp) {
   server.send(200, "application/json", resp);
 }
 
-static String statusBody(const State &state,const Led &led) {
+static String statusBody(const Settings &settings, const State &state,const Led &led, const Effects &effects) {
   String res("");
   res += "<p>V2</p>";
   if (state.riseStart || state.riseStop) {
@@ -44,13 +44,13 @@ static String statusBody(const State &state,const Led &led) {
   }
   res += "<p>Dyn Level: " + String(state.dynLevel) + "</p>";
   res += "<p>Dyn Factor: " + String(state.dynFactor) + "</p>";
-  res += "<p>DynR: " + String(state.dynR);
-  res += "   DynG: " + String(state.dynG);
-  res += "   DynB: " + String(state.dynB) + "</p>";
+  struct palette p = effects.dynGradColor(0);
+  res += "<p>DynR: " + String(p.r);
+  res += "   DynG: " + String(p.g);
+  res += "   DynB: " + String(p.b) + "</p>";
   res += "<p>Led1: " + String(led.getLed(1), HEX) + "</p>";
   return res;
 }
-
 
 static String numInput(const char *label, const char *name, long min, long max, int value) {
   return String("<label>") + label + ":</label><input name=\"" + name + "\" type=\"number\" min=\"" + String(min) + " \" max=\"" + String(max) + "\" value=\"" + String(value) + "\"></p>";
@@ -60,9 +60,8 @@ static String formBody(const Settings &settings, int8_t strip) {
   String strp = strip < 0 ? "" : String(strip);
   String res("<form action=\"/{{STRIP}}\" method=\"post\">");
   res += String("<p>") + numInput("On", "on", 0, 1, settings.on) + numInput("Mode", "mode", 0, NUM_MODES - 1, settings.mode) + numInput("OnOff Mode", "onoffmode", 0, ONOFFMODE_LAST - 1, settings.onoffmode) + "</p>";
-  res += String("<p>") + numInput("R", "red", 0, 255, settings.r);
-  res +=                 numInput("G", "green", 0, 255, settings.g);
-  res +=                 numInput("B", "blue", 0, 255, settings.b) + "</p>";
+  res +=         "<p>" + numInput("Color Index", "colidx", 0, NUM_PALETTE - 1, settings.colidx) + "</p>";
+  res +=         "<p>" + numInput("Gradient Length", "ngradient", 0, NUM_PALETTE - 1, settings.ngradient) + "</p>";
   res +=         "<p>" + numInput("Brightness", "bri", 0, 256, settings.bri) + "</p>";
   res +=         "<p>" + numInput("Brightness2", "bri2", 0, 256, settings.bri2) + "</p>";
   res +=         "<p>" + numInput("Cycle", "cycle", 0, 60000, settings.cycle) + "</p>";
@@ -125,19 +124,11 @@ static void extractArgs(Settings &settings, State &state) {
   extractArg8("on", settings.on);
   extractArg8("mode", settings.mode);
   extractArg8("onoffmode", settings.onoffmode);
-  extractArg8("red", settings.r);
-  extractArg8("green", settings.g);
-  extractArg8("blue", settings.b);
+  extractArg8("colidx", settings.colidx);
+  extractArg8("ngradient", settings.ngradient);
   extractArg16("bri", settings.bri);
   extractArg8("bri2", settings.bri2);
   extractArg32("cycle", settings.cycle);
-  uint8_t pal;
-  if(extractArg8("pal", pal)) {
-    pal = pal % NUM_PALETTE;
-    settings.r = settings.palette[pal].r;
-    settings.g = settings.palette[pal].g;
-    settings.b = settings.palette[pal].b;
-  }
   uint8_t bril;
   if(extractArg8("bril", bril)) {
     bril = bril % NUM_BRILEVELS;
@@ -148,20 +139,20 @@ static void extractArgs(Settings &settings, State &state) {
   processSettings(settings, state, wasOn);
 }
 
-static void handleIndex(Settings &settings, State &state, const Led &led, const StripSettings &stripSettings, uint8_t strip) {
+static void handleIndex(Settings &settings, State &state, const Led &led, const Effects &effects, const StripSettings &stripSettings, uint8_t strip) {
   extractArgs(settings, state);
-  sendResult(head(stripSettings) + formBody(settings, strip) + statusBody(state, led) + tail());
+  sendResult(head(stripSettings) + formBody(settings, strip) + statusBody(settings, state, led, effects) + tail());
 }
 
-static void handleSet(Settings &settings, State &state, const Led &led, const StripSettings &stripSettings, uint8_t strip, bool sendRes) {
+static void handleSet(Settings &settings, State &state, const Led &led, const Effects &effects, const StripSettings &stripSettings, uint8_t strip, bool sendRes) {
   extractArgs(settings, state);
   if (sendRes) {
-    sendResult(head(stripSettings) + formBody(settings, strip) + statusBody(state, led) + "<p>sent command</p>\r\n" + tail());
+    sendResult(head(stripSettings) + formBody(settings, strip) + statusBody(settings, state, led, effects) + "<p>sent command</p>\r\n" + tail());
   }
 }
 
-static void handleApiGet(const Settings &settings, const State &state) {
-  DynamicJsonDocument jsonDocument(1536);
+static void handleApiGet(const Settings &settings, const State &state, const Effects &effects) {
+  DynamicJsonDocument jsonDocument(2536);
   JsonObject jsRoot = jsonDocument.to<JsonObject>();
   JsonObject jsState = jsRoot.createNestedObject("state");  
   JsonObject jsSettings = jsRoot.createNestedObject("settings");
@@ -169,9 +160,8 @@ static void handleApiGet(const Settings &settings, const State &state) {
 
   jsSettings["on"] = settings.on != 0;
   jsSettings["mode"] = settings.mode;
-  jsSettings["r"] = settings.r;
-  jsSettings["g"] = settings.g;
-  jsSettings["b"] = settings.b;
+  jsSettings["colidx"] = settings.colidx;
+  jsSettings["ngradient"] = settings.ngradient;
   jsSettings["bri"] = settings.bri;
   jsSettings["bri2"] = settings.bri2;
   jsSettings["cycle"] = settings.cycle;
@@ -186,9 +176,11 @@ static void handleApiGet(const Settings &settings, const State &state) {
   jsState["now"] = state.now;
   jsState["dynLevel"] = state.dynLevel;
   jsState["dynFactor"] = state.dynFactor;
-  jsState["dynR"] = state.dynR;
-  jsState["dynG"] = state.dynG;
-  jsState["dynB"] = state.dynB;
+
+  struct palette p = effects.dynGradColor(0);
+  jsState["dynR"] = p.r;
+  jsState["dynG"] = p.g;
+  jsState["dynB"] = p.b;
 
   for (int i = 0; i < NUM_PALETTE; i ++) {
     JsonObject c = jsPalette.createNestedObject();
@@ -207,13 +199,15 @@ static void handleApiGet(const Settings &settings, const State &state) {
 static void handleApiPost(Settings &settings, State &state, const StripSettings &stripSettings, bool sendResult) {
   Serial.println("got post");
   bool wasOn = settings.on;
-  DynamicJsonDocument jsonDocument(1536);
+  DynamicJsonDocument jsonDocument(2536);
   String jsonString(server.arg("plain"));
   Serial.print("POST: ");
   Serial.println(jsonString);
   DeserializationError error = deserializeJson(jsonDocument, jsonString);
+  String res = "OK";
   if (error) {
     Serial.println(error.c_str());
+    res = String("FAIL ") + error.c_str();
   } else {
     JsonObject root = jsonDocument.as<JsonObject>();
     JsonObject jsSettings = root["settings"];
@@ -221,6 +215,7 @@ static void handleApiPost(Settings &settings, State &state, const StripSettings 
       bool on = jsSettings["on"];
       Serial.println(String("on: ") + on);
       settings.on = on;
+      res = "SETON OK";
     }
     if (jsSettings.containsKey("bri")) {
       settings.bri = jsSettings["bri"];
@@ -233,17 +228,16 @@ static void handleApiPost(Settings &settings, State &state, const StripSettings 
       }
       settings.bri2 %= 32;
     }
-    if (jsSettings.containsKey("r")) {
-      settings.r = jsSettings["r"];
-      settings.r %= 256;
+    if (jsSettings.containsKey("colidx")) {
+      settings.colidx = jsSettings["colidx"];
+      settings.colidx %= NUM_PALETTE;
     }
-    if (jsSettings.containsKey("g")) {
-      settings.g = jsSettings["g"];
-      settings.g %= 256;
-    }
-    if (jsSettings.containsKey("b")) {
-      settings.b = jsSettings["b"];
-      settings.b %= 256;
+    if (jsSettings.containsKey("ngradient")) {
+      settings.ngradient = jsSettings["ngradient"];
+      settings.ngradient %= NUM_PALETTE;
+      if (settings.ngradient < 1) {
+        settings.ngradient = 1;
+      }
     }
     if (jsSettings.containsKey("setpal")) {
       JsonObject jsSetPal = jsSettings["setpal"];
@@ -257,25 +251,18 @@ static void handleApiPost(Settings &settings, State &state, const StripSettings 
         }
       }
     }
-    if (jsSettings.containsKey("pal")) {
-      uint32_t pal = jsSettings["pal"];
-      pal = pal % NUM_PALETTE;
-      settings.r = settings.palette[pal].r;
-      settings.g = settings.palette[pal].g;
-      settings.b = settings.palette[pal].b;    
-    }
     if (jsSettings.containsKey("mode")) {
       settings.mode = jsSettings["mode"];
     }
   }
   processSettings(settings, state, wasOn);
   if (sendResult) {
-    sendJsonResult("\"OK\"");
+    sendJsonResult(String("\"") + res + "\"");
   }
 }
 
 static void handleLedsGet(const Led &led) {
-  DynamicJsonDocument jsonDocument(1536);
+  DynamicJsonDocument jsonDocument(5536);
   JsonObject jsRoot = jsonDocument.to<JsonObject>();
   JsonArray jsLeds = jsRoot.createNestedArray("leds");
   for (uint16_t i = 0; i < led.stripSettings.NUM_LEDS; i ++) {
@@ -317,16 +304,16 @@ static void handleSetup() {
 }
 
 
-void initServer(Settings *settings, State *state, Led **led) {
+void initServer(Settings *settings, State *state, Led **led, Effects **effects) {
   // Start the server
-  server.on("/", HTTP_GET, [=]() { handleIndex(settings[0], state[0], *led[0], STRIP_SETTINGS[0], -1); });
+  server.on("/", HTTP_GET, [=]() { handleIndex(settings[0], state[0], *led[0], *effects[0], STRIP_SETTINGS[0], -1); });
   server.on("/", HTTP_POST, [=]() { 
     for (uint8_t i = 0; i < NUM_STRIPS; i++) {
-      handleSet(settings[i], state[i], *led[i], STRIP_SETTINGS[i], -1, i == NUM_STRIPS - 1);
+      handleSet(settings[i], state[i], *led[i], *effects[i], STRIP_SETTINGS[i], -1, i == NUM_STRIPS - 1);
     }
   });
   server.on("/spa", HTTP_GET, [=]() { handleSpa(settings[0], state[0], STRIP_SETTINGS[0], -1); });
-  server.on("/api", HTTP_GET, [=]() { handleApiGet(settings[0], state[0]); });
+  server.on("/api", HTTP_GET, [=]() { handleApiGet(settings[0], state[0], *effects[0]); });
   server.on("/api", HTTP_POST, [=]() { 
     for (uint8_t i = 0; i < NUM_STRIPS; i++) {
       handleApiPost(settings[i], state[i], STRIP_SETTINGS[i], i == NUM_STRIPS - 1);
@@ -339,10 +326,10 @@ void initServer(Settings *settings, State *state, Led **led) {
   for (uint8_t i = 0; i < NUM_STRIPS; i++) {
     String strip(i);
     Serial.println("Setting routes for /" + strip);
-    server.on("/" + strip, HTTP_GET, [=]() { handleIndex(settings[i], state[i], *led[i], STRIP_SETTINGS[i], i); });
-    server.on("/" + strip, HTTP_POST, [=]() { handleSet(settings[i], state[i], *led[i], STRIP_SETTINGS[i], i, true); });
+    server.on("/" + strip, HTTP_GET, [=]() { handleIndex(settings[i], state[i], *led[i], *effects[i], STRIP_SETTINGS[i], i); });
+    server.on("/" + strip, HTTP_POST, [=]() { handleSet(settings[i], state[i], *led[i], *effects[i], STRIP_SETTINGS[i], i, true); });
     server.on("/spa/" + strip, HTTP_GET, [=]() { handleSpa(settings[i], state[i], STRIP_SETTINGS[i], i); });
-    server.on("/api/" + strip, HTTP_GET, [=]() { handleApiGet(settings[i], state[i]); });
+    server.on("/api/" + strip, HTTP_GET, [=]() { handleApiGet(settings[i], state[i], *effects[i]); });
     server.on("/api/" + strip, HTTP_POST, [=]() { handleApiPost(settings[i], state[i], STRIP_SETTINGS[i], true); });
     server.on("/leds/" + strip, HTTP_GET, [=]() { handleLedsGet(*led[i]); });
   }

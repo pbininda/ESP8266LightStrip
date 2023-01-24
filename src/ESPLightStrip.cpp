@@ -56,12 +56,11 @@ static void initLeds() {
 static void setLeds() {
   for (uint8_t i = 0; i < NUM_STRIPS; i++) {
     Settings &settings = strip_settings[i];
-    State &state = strip_states[i];
     switch (settings.mode) {
       default:
       case 0:
         {
-          effects[i]->setLedsFixed(leds[i]->ledColor(state.dynR, state.dynG, state.dynB, settings.bri2));
+          effects[i]->setLedsFixed();
         }
         break;
       case 1:
@@ -73,6 +72,7 @@ static void setLeds() {
         {
           effects[i]->setLedsRainbowCycle();
         }
+
         break;
     }
     leds[i]->sendLeds();
@@ -81,7 +81,7 @@ static void setLeds() {
 
 void loop() {
   static const int tickResolution = 1000;
-  handleWiFi(leds);
+  handleWiFi(leds, effects);
   handleServer();
   handleOta();
   bool change = false;

@@ -25,9 +25,6 @@ void updateState(struct settings &settings, struct state &state, uint8_t strip, 
     }
   }
   state.dynFactor = settings.bri;
-  state.dynR = state.dynFactor * settings.r / 256;
-  state.dynG = state.dynFactor * settings.g / 256;
-  state.dynB = state.dynFactor * settings.b / 256;
 }
 
 void initState(struct settings &settings, struct state &state) {
@@ -36,3 +33,4 @@ void initState(struct settings &settings, struct state &state) {
   state.riseStart = state.now;
   state.riseStop = state.now + settings.rise;
 }
+

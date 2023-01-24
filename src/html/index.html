@@ -64,12 +64,15 @@
                 margin-left: -1%;
             }
             .palette-item {
-                width: 24%;
+                width: 11.5%;
                 margin-left: 1%;
                 display: inline-block;
-                height: 4rem;
-                border: 2px solid black;
+                height: 1.2rem;
+                border: 1px solid black;
                 box-sizing: border-box;
+            }
+            .palette-item.selected {
+                border: 3px solid blue;
             }
             #mode-box {
                 width: 100%;
@@ -110,7 +113,7 @@
             let targetApi = '';
             let timer = undefined;
             let requesting = false;
-            let paletteDone = false;
+
 
             if (window.location.protocol === 'file:') {
                 targetApi = 'http://espkueche1';
@@ -166,11 +169,19 @@
                 sendState();
             }
 
-            function onPalClicked(pal) {
-                console.log('pal', pal);
-                currentState.settings.pal = pal;
+            function onPalClicked(event, colidx) {
+                console.log('colidx', event, colidx);
+                if (event.offsetX > event.target.offsetWidth * 0.8) {
+                    console.log('right edge');
+                    let n = colidx - currentState.settings.colidx;
+                    if (n < 0) {
+                        n = currentState.palette.length + n;
+                    }
+                    currentState.settings.ngradient = n + 1;
+                } else {
+                    currentState.settings.colidx = colidx;
+                }
                 sendState();
-                delete currentState.settings.pal;
             }
 
             function onModeClicked(mode) {
@@ -192,15 +203,20 @@
                 el.setAttribute(atr, val);
             }
 
-            function createPalette(palette) {
-                console.log(palette);
+            function createPalette(palette, settings) {
                 let res = "";
                 palette.forEach((unadj, i) => {
-                    let element = adjRgb(unadj);
-                    res += `<span class="palette-item" data-pal="${i}" style="background-color: rgb(${element.r},${element.g},${element.b});" onclick="onPalClicked(${i})"></span>`;
+                    const element = adjRgb(unadj);
+                    let isSel = (i >= settings.colidx && i < settings.colidx + settings.ngradient) ;
+                    if (settings.colidx + settings.ngradient > palette.length) {
+                        if (i < (settings.colidx + settings.ngradient) % palette.length) {
+                            isSel = true;
+                        }
+                    }
+                    const bg = `rgb(${element.r},${element.g},${element.b})`;
+                    res += `<span class="palette-item${isSel ? ' selected' : ''}" data-pal="${i}" style="background: ${bg}" onclick="onPalClicked(event, ${i})"></span>`;
                     
                 });
-                console.log(res);
                 let el = document.querySelector('#palette-box');
                 el.innerHTML = res;
             }
@@ -226,13 +242,22 @@
                 }
                 setText("#brightness2-level-text", `${Math.round(response.settings.bri2 / 0.32)}%`);
                 setAttribute('#current-brightness2', 'style', `width: ${response.settings.bri2 / 0.32}%;`);
-                let unadj = {r: response.settings.r, g: response.settings.g, b: response.settings.b};
+                let palSet = response.palette[response.settings.colidx];
+                let unadj = {r: palSet.r, g: palSet.g, b: palSet.b};
                 let rgb = adjRgb(unadj);
-                setAttribute('#color-box', 'style', `background-color: rgb(${rgb.r},${rgb.g},${rgb.b})`);
-                if(!paletteDone) {
-                    createPalette(response.palette);
-                    paletteDone = true;
+                let bg = `rgb(${rgb.r},${rgb.g},${rgb.b})`;
+                if (response.settings.ngradient > 1) {
+                    bg = 'linear-gradient(90deg';
+                    for (let i = 0; i < response.settings.ngradient; i++) {
+                        palSet = response.palette[(response.settings.colidx + i) % response.palette.length];
+                        unadj = {r: palSet.r, g: palSet.g, b: palSet.b};
+                        rgb = adjRgb(unadj);
+                        bg += `, rgb(${rgb.r},${rgb.g},${rgb.b})`;
+                    }
+                    bg += ')'
                 }
+                setAttribute('#color-box', 'style', `background: ${bg};`);
+                createPalette(response.palette, response.settings);
                 document.querySelectorAll('.mode').forEach(mode => {
                     mode.setAttribute('style', '');
                 });
@@ -263,7 +288,9 @@
                 };
                 request.responseType = 'json';
                 request.open('POST', targetApi + '/api{{STRIP}}');
-                request.send(JSON.stringify(currentState));
+                const partialState = JSON.parse(JSON.stringify(currentState));
+                delete partialState.palette;
+                request.send(JSON.stringify(partialState));
             }
 
             function reload(done) {

@@ -8,7 +8,7 @@ struct header {
   uint16_t version;
 };
 
-static struct header expectedHeader = {0x1ED5, 5};
+static struct header expectedHeader = {0x1ED5, 6};
 
 static void printSettings() {
   for (uint8_t i = 0; i < NUM_STRIPS; i++) {
@@ -16,9 +16,9 @@ static void printSettings() {
     Settings &settings = strip_settings[i];
     Serial.print("on: "); Serial.print(settings.on);
     Serial.print("    mode: "); Serial.println(settings.mode);
-    Serial.print("r: "); Serial.print(settings.r);
-    Serial.print("    g: "); Serial.print(settings.g);
-    Serial.print("    b: "); Serial.println(settings.b);
+    Serial.print("r: "); Serial.print(settings.palette[settings.colidx].r);
+    Serial.print("    g: "); Serial.print(settings.palette[settings.colidx].g);
+    Serial.print("    b: "); Serial.println(settings.palette[settings.colidx].b);
     Serial.print("bri: "); Serial.println(settings.bri);
     Serial.print("bri2: "); Serial.println(settings.bri2);
     Serial.print("rise: "); Serial.print(settings.rise);
@@ -33,15 +33,14 @@ static void defaultSettings() {
     Settings &settings = strip_settings[i];
     settings.on = true;
     settings.mode = 0;
-    settings.r = 255;
-    settings.g = 255;
-    settings.b = 255;
+    settings.colidx = 0;
     settings.bri = 256;
     settings.bri2 = 10;
     settings.rise = 1000;
     settings.fall = 1000;
     settings.cycle = 10000;
     settings.onoffmode = 0;
+    settings.ngradient = 1;
     settings.palette[0] = {255, 255, 255};
     settings.palette[1] = {255, 200, 120};
     settings.palette[2] = {255, 180, 100};
@@ -50,6 +49,22 @@ static void defaultSettings() {
     settings.palette[5] = {255, 80, 30};
     settings.palette[6] = {255, 60, 20};
     settings.palette[7] = {255, 0, 0};
+    settings.palette[8] = {255, 255, 255};
+    settings.palette[9] = {255, 200, 120};
+    settings.palette[10] = {255, 180, 100};
+    settings.palette[11] = {255, 120, 50};
+    settings.palette[12] = {255, 100, 40};
+    settings.palette[13] = {255, 80, 30};
+    settings.palette[14] = {255, 60, 20};
+    settings.palette[15] = {255, 0, 0};
+    settings.palette[16] = {255, 255, 255};
+    settings.palette[17] = {255, 200, 120};
+    settings.palette[18] = {255, 180, 100};
+    settings.palette[19] = {255, 120, 50};
+    settings.palette[20] = {255, 100, 40};
+    settings.palette[21] = {255, 80, 30};
+    settings.palette[22] = {255, 60, 20};
+    settings.palette[23] = {255, 0, 0};
   }
 }
 

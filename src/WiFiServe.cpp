@@ -30,7 +30,7 @@ void initWiFi() {
   // WiFi.setSleepMode(WIFI_NONE_SLEEP);
 }
 
-void handleWiFi(Led **leds) {
+void handleWiFi(Led **leds, Effects **effects) {
   if (!wiFiSetupDone) {
     if (WiFi.status() == WL_CONNECTED) {
       Serial.println("");
@@ -38,7 +38,7 @@ void handleWiFi(Led **leds) {
       Serial.println("WiFi connected");
 //      wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
       Serial.println("initializing server\r\n");
-      initServer(strip_settings, strip_states, leds);
+      initServer(strip_settings, strip_states, leds, effects);
       Serial.println("ready for commands\r\n");
       initOta();
       wiFiSetupDone = true;
