@@ -30,6 +30,7 @@ static void sendResult(const String &resp) {
 }
 
 static void sendJsonResult(const String resp) {
+  Serial.println(String("StackSize in send json: ") + uxTaskGetStackHighWaterMark(NULL));
   server.send(200, "application/json", resp);
 }
 
@@ -197,7 +198,7 @@ static void handleApiGet(const Settings &settings, const State &state, const Eff
 }
 
 static void handleApiPost(Settings &settings, State &state, const StripSettings &stripSettings, bool sendResult) {
-  Serial.println("got post");
+  Serial.println(String("StackSize at start of post: ") + uxTaskGetStackHighWaterMark(NULL));
   bool wasOn = settings.on;
   DynamicJsonDocument jsonDocument(2536);
   String jsonString(server.arg("plain"));
@@ -256,6 +257,7 @@ static void handleApiPost(Settings &settings, State &state, const StripSettings 
     }
   }
   processSettings(settings, state, wasOn);
+  Serial.println(String("StackSize at end of post: ") + uxTaskGetStackHighWaterMark(NULL));
   if (sendResult) {
     sendJsonResult(String("\"") + res + "\"");
   }

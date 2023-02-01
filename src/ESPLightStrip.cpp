@@ -13,7 +13,7 @@
 uint16_t briLevels[] = {4, 16, 64, 256};
 uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof briLevels[0]);
 
-static const bool DEBUG_TIMING = 0;
+static const bool DEBUG_TIMING = 1;
 
 static Led *leds[NUM_STRIPS];
 static Effects *effects[NUM_STRIPS];
@@ -84,7 +84,6 @@ static void setLeds() {
 }
 
 void loop() {
-  static const int tickResolution = 1000;
   handleWiFi(leds, effects);
   handleServer();
   handleOta();
@@ -97,25 +96,15 @@ void loop() {
     if (leds[i]->getLastLedChangeDelta() <= 1000) {
       change = true;
     }
-    if (DEBUG_TIMING && state.tick % tickResolution == 0) {
-      static time_t lastTickTime = 0;
-      Serial.print(i);
-      Serial.print(" tick time: ");
-      Serial.print((state.now - lastTickTime) / (tickResolution * 1.0));
-      Serial.println("ms");
-      lastTickTime = state.now;
-    }
     state.tick++;
   }
 
   if (!change) {
     if (DEBUG_TIMING) {
-      Serial.println("no color changes => sleeping");
+      Serial.print("~");
     }
     wiFiGoToSleep(200);
   }
-  // delay(10);
-  // yield();
 }
 
 void setup() {
@@ -130,4 +119,5 @@ void setup() {
   setLeds();
   Serial.println("initializing WIFI\r\n");
   initWiFi();
+  Serial.println(String("StackSize at setup: ") + uxTaskGetStackHighWaterMark(NULL));
 }
