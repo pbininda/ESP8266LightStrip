@@ -44,6 +44,13 @@ static const uint8_t NUM_STRIPS = 1;
 static constexpr StripSettings STRIP_SETTINGS[NUM_STRIPS] = {
     { 105, 31, "Kueche 1", 21, 19 },
 };
+#elif ESPTEST
+// IP 192.168.1.58
+#define SYSTEM_NAME "Esp Test"
+static const uint8_t NUM_STRIPS = 1;
+static constexpr StripSettings STRIP_SETTINGS[NUM_STRIPS] = {
+    { 69, 20, "Esp Test", 21, 19 },
+};
 #else
 #error define a system config
 #endif

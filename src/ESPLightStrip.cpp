@@ -48,6 +48,10 @@ static void initLeds() {
   leds[0]->initLeds<STRIP_SETTINGS[0].LED_PIN, STRIP_SETTINGS[0].CLOCK_PIN>();
   // leds[1]->initLeds<STRIP_SETTINGS[1].LED_PIN, STRIP_SETTINGS[1].CLOCK_PIN>();
   // leds[2]->initLeds<STRIP_SETTINGS[0].LED_PIN, STRIP_SETTINGS[2].CLOCK_PIN>();
+#elif ESPTEST
+  leds[0]->initLeds<STRIP_SETTINGS[0].LED_PIN, STRIP_SETTINGS[0].CLOCK_PIN>();
+  // leds[1]->initLeds<STRIP_SETTINGS[1].LED_PIN, STRIP_SETTINGS[1].CLOCK_PIN>();
+  // leds[2]->initLeds<STRIP_SETTINGS[0].LED_PIN, STRIP_SETTINGS[2].CLOCK_PIN>();
 #else
 #error define a system config
 #endif
