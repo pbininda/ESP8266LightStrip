@@ -6,9 +6,10 @@
 struct header {
   uint16_t magic;
   uint16_t version;
+  uint16_t num_strips;
 };
 
-static struct header expectedHeader = {0x1ED5, 6};
+static struct header expectedHeader = {0x1ED5, 7, NUM_STRIPS};
 
 static void printSettings() {
   for (uint8_t i = 0; i < NUM_STRIPS; i++) {
@@ -81,6 +82,13 @@ void readSettings() {
   }
   else if (header.version != expectedHeader.version) {
     Serial.println("header version mismatch");
+    defaultSettings();
+    printSettings();
+    writeSettings();
+    return;
+  }
+  else if (header.num_strips != expectedHeader.num_strips) {
+    Serial.println("header num strips mismatch");
     defaultSettings();
     printSettings();
     writeSettings();

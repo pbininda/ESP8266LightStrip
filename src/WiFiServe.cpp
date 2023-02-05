@@ -10,6 +10,7 @@
 static bool wiFiSetupDone = false;
 static WiFiManager wifiManager;
 
+String wiFiMac;
 
 void startWiFiPortal() {
   Serial.print("Resetting WIFI");
@@ -22,9 +23,12 @@ void initWiFi() {
   static uint8_t  MAC_STA[]                = {0,0,0,0,0,0};
   Serial.print("MAC[STA]");
   uint8_t *MAC  = WiFi.macAddress(MAC_STA);                   //get MAC address of STA interface
+
+  wiFiMac = "";
   for (uint8_t i = 0; i < sizeof(MAC)+2; ++i){
     Serial.print(":");
     Serial.print(MAC[i],HEX);
+    wiFiMac = wiFiMac + String(MAC[i], HEX);
   }
   wifiManager.autoConnect(SYSTEM_NAME);
   // WiFi.setSleepMode(WIFI_NONE_SLEEP);

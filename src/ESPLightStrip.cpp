@@ -9,6 +9,7 @@
 #include "state.h"
 #include "persistence.h"
 #include "effects.h"
+#include "mqtt.h"
 
 uint16_t briLevels[] = {4, 16, 64, 256};
 uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof briLevels[0]);
@@ -50,7 +51,7 @@ static void initLeds() {
   // leds[2]->initLeds<STRIP_SETTINGS[0].LED_PIN, STRIP_SETTINGS[2].CLOCK_PIN>();
 #elif ESPTEST
   leds[0]->initLeds<STRIP_SETTINGS[0].LED_PIN, STRIP_SETTINGS[0].CLOCK_PIN>();
-  // leds[1]->initLeds<STRIP_SETTINGS[1].LED_PIN, STRIP_SETTINGS[1].CLOCK_PIN>();
+  leds[1]->initLeds<STRIP_SETTINGS[1].LED_PIN, STRIP_SETTINGS[1].CLOCK_PIN>();
   // leds[2]->initLeds<STRIP_SETTINGS[0].LED_PIN, STRIP_SETTINGS[2].CLOCK_PIN>();
 #else
 #error define a system config
@@ -87,6 +88,7 @@ void loop() {
   handleWiFi(leds, effects);
   handleServer();
   handleOta();
+  handleMqtt();
   bool change = false;
   for (uint8_t i = 0; i < NUM_STRIPS; i++) {
     Settings &settings = strip_settings[i];
@@ -119,5 +121,6 @@ void setup() {
   setLeds();
   Serial.println("initializing WIFI\r\n");
   initWiFi();
+  initMqtt();
   Serial.println(String("StackSize at setup: ") + uxTaskGetStackHighWaterMark(NULL));
 }
