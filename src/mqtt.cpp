@@ -116,13 +116,69 @@ static void publishAvailability() {
    }
 }
 
+void applyPayloadToStrip(uint8_t stripNo, JsonObject &root) {
+    if (root.containsKey("state")) {
+        String state = root["state"];
+        if (state == "ON") {
+            strip_settings[stripNo].on = true;
+        } else {
+            strip_settings[stripNo].on = false;
+        }
+    }
+    if (root.containsKey("brightness")) {
+        uint8_t brightness = root["brightness"];
+        strip_settings[stripNo].bri = brightness;
+    }
+}
+
 void handleMqttMessage(char* p_topic, byte* p_payload, unsigned int p_length) {
-  // concatenates the payload into a string
-  String payload;
-  for (uint8_t i = 0; i < p_length; i++) {
-    payload.concat((char)p_payload[i]);
-  }
-  Serial.println(String("Command: ") + p_topic + " " + payload);
+    // concatenates the payload into a string
+    String payload;
+    for (uint8_t i = 0; i < p_length; i++) {
+        payload.concat((char)p_payload[i]);
+    }
+    const char * top1 = strtok(p_topic, "/");
+    if (!top1) {
+        return;
+    }
+    char * stripId = strtok(0, "/");
+    if (!stripId) {
+        return;
+    }
+    const char * light = strtok(0, "/");
+    const char * cmd = strtok(0, "/");
+    const char * id1  = strtok(stripId, "-");
+    if (!id1) {
+        return;
+    }
+    const char * id2 = strtok(0, "-");
+    int8_t stripNo;
+    if (id2) {
+        stripNo = atoi(id2);
+    } else {
+        id2 = "-1";
+        stripNo = -1;
+    }
+    Serial.println(String("Command: ") + top1 + " " + id1 + " " + String(stripNo) + " " + light + " " + cmd + " " + payload);
+    if (stripNo < -1 || stripNo >= NUM_STRIPS) {
+        return;
+    }
+    DynamicJsonDocument jsonDocument(1024);
+    DeserializationError error = deserializeJson(jsonDocument, payload);
+    boolean ok = true;
+    if (error) {
+        Serial.println(error.c_str());
+        ok = false;
+    } else {
+        JsonObject root = jsonDocument.as<JsonObject>();
+        if (stripNo < 0) {
+            for (uint8_t i = 0; i < NUM_STRIPS; i++) {
+                applyPayloadToStrip(i, root);
+            }
+        } else {
+            applyPayloadToStrip(stripNo, root);
+        }
+    }
 }
 
  
