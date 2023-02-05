@@ -5,6 +5,8 @@
 
 #include "secrets.h"
 
+#define SW_VERSION_NO 7
+
 typedef struct StripSettings {
     // used in AP Title and HTTP title
     uint16_t NUM_LEDS;

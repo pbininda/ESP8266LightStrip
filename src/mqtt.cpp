@@ -61,11 +61,18 @@ static void publishOneDiscovery(int8_t stripNo) {
     root["state_topic"] = stateTopic(stripNo);
     root["command_topic"] = commandTopic(stripNo);
     root["brightness"] = true;
+    root["effect"] = true;
+    JsonArray effects = root.createNestedArray("effect_list");
+    effects.add("fixed");
+    effects.add("zylon");
+    effects.add("wheel");
     JsonObject device = root.createNestedObject("device");  
     JsonArray identifiers = device.createNestedArray("identifiers");
     identifiers.add("device-" + wiFiMac);
     device["name"] = String(SYSTEM_NAME) + " Device";
     device["model"] = "ESP Light Strip";
+    device["manufacturer"] = "PBininda";
+    device["sw_version"] = SW_VERSION_NO;
     // root["rgb"] = true;
     publish(discoveryTopic(stripNo), jsonDocument);
 }
@@ -92,6 +99,7 @@ static String getJsonState(int8_t stripNo) {
     }
     root["state"] = strip_settings[stripNo].on ? "ON" : "OFF";
     root["brightness"] = strip_settings[stripNo].bri;
+    root["effect"] = strip_settings[stripNo].mode == 2 ? "wheel" : strip_settings[stripNo].mode == 1 ? "zylon" : "fixed";
     String state;;
     serializeJson(jsonDocument, state);
     return state;
@@ -128,6 +136,16 @@ void applyPayloadToStrip(uint8_t stripNo, JsonObject &root) {
     if (root.containsKey("brightness")) {
         uint8_t brightness = root["brightness"];
         strip_settings[stripNo].bri = brightness;
+    }
+    if (root.containsKey("effect")) {
+        String effect = root["effect"];
+        if (effect == "fixed") {
+            strip_settings[stripNo].mode = 0;
+        } else if (effect == "zylon") {
+            strip_settings[stripNo].mode = 1;
+        } else if (effect == "wheel") {
+            strip_settings[stripNo].mode = 2;
+        }
     }
 }
 

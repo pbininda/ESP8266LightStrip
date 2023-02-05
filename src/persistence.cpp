@@ -9,7 +9,7 @@ struct header {
   uint16_t num_strips;
 };
 
-static struct header expectedHeader = {0x1ED5, 7, NUM_STRIPS};
+static struct header expectedHeader = {0x1ED5, SW_VERSION_NO, NUM_STRIPS};
 
 static void printSettings() {
   for (uint8_t i = 0; i < NUM_STRIPS; i++) {
