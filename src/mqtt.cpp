@@ -228,17 +228,17 @@ void initMqtt() {
 }
 
 void handleMqtt() {
-    static unsigned long lastConnectAttempt = 0;
-    static unsigned long lastSent = 0;
     static uint16_t count = 0;
     unsigned long now = millis();
 
     if (!pubSubClient.connected()) {
+        static unsigned long lastConnectAttempt = 0;
         if (now - lastConnectAttempt > 5000) {
             reconnect();
             lastConnectAttempt = millis();
         }
     } else {
+        static unsigned long lastSent = 0;
         pubSubClient.loop();
         publishState();
         if (now - lastSent > 1000) {

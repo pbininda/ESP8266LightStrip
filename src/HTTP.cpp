@@ -10,6 +10,10 @@
 #include "WiFiServe.h"
 #include "index.h"
 
+static uint16_t briLevels[] = {4, 16, 64, 256};
+static uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof briLevels[0]);
+
+
 static WebServer server(80);
 static bool serverSetupDone = false;
 static const uint8_t NUM_MODES = 10;

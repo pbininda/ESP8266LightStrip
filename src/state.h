@@ -14,7 +14,7 @@ struct palette {
 };
 
 typedef struct settings {
-  settings() {};
+  settings(): on(0), mode(0), colidx(0), bri(0), rise(0), fall(0), cycle(0), bri2(0), onoffmode(0), ngradient(0), palette({}) {};
   settings(const settings &) = delete;
   uint8_t on;
   uint8_t mode;
@@ -32,7 +32,7 @@ typedef struct settings {
 extern Settings strip_settings[NUM_STRIPS];
 
 typedef struct state {
-  state() {};
+  state(): now(0), riseStart(0), riseStop(0), fallStart(0), fallStop(0), dynLevel(0), dynFactor(0), tick(0) {};
   state(const state&) = delete;
   time_t now;
   time_t riseStart;
@@ -46,11 +46,8 @@ typedef struct state {
 
 extern State strip_states[NUM_STRIPS];
 
-extern uint16_t briLevels[];
-extern uint8_t NUM_BRILEVELS;
-
-extern void initState(struct settings &settings, struct state &state);
-extern void updateState(struct settings &settings, struct state &state, uint8_t strip, uint8_t numLeds);
+extern void initState(const struct settings &settings, struct state &state);
+extern void updateState(const struct settings &settings, struct state &state, uint8_t strip, uint8_t numLeds);
 
 #define DYNRANGE (256L * 128L)
 

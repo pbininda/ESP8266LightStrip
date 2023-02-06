@@ -11,9 +11,6 @@
 #include "effects.h"
 #include "mqtt.h"
 
-uint16_t briLevels[] = {4, 16, 64, 256};
-uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof briLevels[0]);
-
 static const bool DEBUG_TIMING = 1;
 
 static Led *leds[NUM_STRIPS];

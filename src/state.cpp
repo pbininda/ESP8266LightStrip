@@ -6,7 +6,7 @@
 struct state strip_states[NUM_STRIPS];
 struct settings strip_settings[NUM_STRIPS];
 
-void updateState(struct settings &settings, struct state &state, uint8_t strip, uint8_t numLeds) {
+void updateState(const struct settings &settings, struct state &state, uint8_t strip, uint8_t numLeds) {
   state.now = millis();
   if (settings.on) {
     if (state.now >= state.riseStart && state.now < state.riseStop) {
@@ -27,7 +27,7 @@ void updateState(struct settings &settings, struct state &state, uint8_t strip, 
   state.dynFactor = settings.bri;
 }
 
-void initState(struct settings &settings, struct state &state) {
+void initState(const struct settings &settings, struct state &state) {
   state.dynLevel = 0;
   state.now = millis();
   state.riseStart = state.now;
