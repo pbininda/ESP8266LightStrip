@@ -10,13 +10,16 @@
 #include "WiFiServe.h"
 #include "index.h"
 
-static uint16_t briLevels[] = {4, 16, 64, 256};
+static uint16_t briLevels[] = {4, 16, 64, 256}; // NOLINT
 static uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof briLevels[0]);
 
 
 static WebServer server(80);
 static bool serverSetupDone = false;
 static const uint8_t NUM_MODES = 10;
+
+static const int HTTP_OK = 200;
+static const int HTTP_REDIRECT = 301;
 
 static const char HEAD_1[] PROGMEM = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">\r\n<title>";
 
@@ -32,30 +35,31 @@ static String tail() {
   return "</body>\r\n</html>\r\n";
 }
 
+
 static void sendResult(const String &resp) {
-  server.send(200, "text/html", resp);
+  server.send(HTTP_OK, "text/html", resp);
 }
 
 static void sendJsonResult(const String resp) {
   Serial.println(String("StackSize in send json: ") + uxTaskGetStackHighWaterMark(NULL));
-  server.send(200, "application/json", resp);
+  server.send(HTTP_OK, "application/json", resp);
 }
 
-static String statusBody(const Settings &settings, const State &state,const Led &led, const Effects &effects) {
+static String statusBody(const State &state,const Led &led, const Effects &effects) {
   String res("");
   res += "<p>V2</p>";
-  if (state.riseStart || state.riseStop) {
+  if (state.riseStart != 0 || state.riseStop != 0) {
     res += "<p>Rise time: " + String(state.riseStart - state.now) + " &rArr; " + String(state.riseStop - state.now) + "</p>";
   }
-  if (state.fallStart || state.fallStop) {
+  if (state.fallStart != 0 || state.fallStop != 0) {
     res += "<p>Fall time: " + String(state.fallStart - state.now) + " &rArr; " + String(state.fallStop - state.now) + "</p>";
   }
   res += "<p>Dyn Level: " + String(state.dynLevel) + "</p>";
   res += "<p>Dyn Factor: " + String(state.dynFactor) + "</p>";
-  struct palette p = effects.dynGradColor(0);
-  res += "<p>DynR: " + String(p.r);
-  res += "   DynG: " + String(p.g);
-  res += "   DynB: " + String(p.b) + "</p>";
+  const struct palette pal = effects.dynGradColor(0);
+  res += "<p>DynR: " + String(pal.r);
+  res += "   DynG: " + String(pal.g);
+  res += "   DynB: " + String(pal.b) + "</p>";
   res += "<p>Led1: " + String(led.getLed(1), HEX) + "</p>";
   return res;
 }
@@ -65,7 +69,7 @@ static String numInput(const char *label, const char *name, long min, long max, 
 }
 
 static String formBody(const Settings &settings, int8_t strip) {
-  String strp = strip < 0 ? "" : String(strip);
+  String strp = (strip < 0 ? "" : String(strip));
   String res("<form action=\"/{{STRIP}}\" method=\"post\">");
   res += String("<p>") + numInput("On", "on", 0, 1, settings.on) + numInput("Mode", "mode", 0, NUM_MODES - 1, settings.mode) + numInput("OnOff Mode", "onoffmode", 0, ONOFFMODE_LAST - 1, settings.onoffmode) + "</p>";
   res +=         "<p>" + numInput("Color Index", "colidx", 0, NUM_PALETTE - 1, settings.colidx) + "</p>";
@@ -114,8 +118,8 @@ static bool extractArg32(const char *arg, uint32_t &target) {
 
 static void processSettings(const Settings &settings, State &state, bool wasOn) {
   time_t now = millis();
-  if (settings.on != wasOn) {
-    if (settings.on) {
+  if ((settings.on != 0) != wasOn) {
+    if (settings.on != 0) {
       state.riseStart = now;
       state.riseStop = now + settings.rise;
     }
@@ -128,7 +132,7 @@ static void processSettings(const Settings &settings, State &state, bool wasOn) 
 }
 
 static void extractArgs(Settings &settings, State &state) {
-  bool wasOn = settings.on;
+  const bool wasOn = settings.on != 0;
   extractArg8("on", settings.on);
   extractArg8("mode", settings.mode);
   extractArg8("onoffmode", settings.onoffmode);
@@ -137,7 +141,7 @@ static void extractArgs(Settings &settings, State &state) {
   extractArg16("bri", settings.bri);
   extractArg8("bri2", settings.bri2);
   extractArg32("cycle", settings.cycle);
-  uint8_t bril;
+  uint8_t bril = 0;
   if(extractArg8("bril", bril)) {
     bril = bril % NUM_BRILEVELS;
     settings.bri = briLevels[bril];
@@ -149,13 +153,13 @@ static void extractArgs(Settings &settings, State &state) {
 
 static void handleIndex(Settings &settings, State &state, const Led &led, const Effects &effects, const StripSettings &stripSettings, uint8_t strip) {
   extractArgs(settings, state);
-  sendResult(head(stripSettings) + formBody(settings, strip) + statusBody(settings, state, led, effects) + tail());
+  sendResult(head(stripSettings) + formBody(settings, strip) + statusBody(state, led, effects) + tail());
 }
 
 static void handleSet(Settings &settings, State &state, const Led &led, const Effects &effects, const StripSettings &stripSettings, uint8_t strip, bool sendRes) {
   extractArgs(settings, state);
   if (sendRes) {
-    sendResult(head(stripSettings) + formBody(settings, strip) + statusBody(settings, state, led, effects) + "<p>sent command</p>\r\n" + tail());
+    sendResult(head(stripSettings) + formBody(settings, strip) + statusBody(state, led, effects) + "<p>sent command</p>\r\n" + tail());
   }
 }
 
@@ -185,16 +189,16 @@ static void handleApiGet(const Settings &settings, const State &state, const Eff
   jsState["dynLevel"] = state.dynLevel;
   jsState["dynFactor"] = state.dynFactor;
 
-  struct palette p = effects.dynGradColor(0);
-  jsState["dynR"] = p.r;
-  jsState["dynG"] = p.g;
-  jsState["dynB"] = p.b;
+  const struct palette pal = effects.dynGradColor(0);
+  jsState["dynR"] = pal.r;
+  jsState["dynG"] = pal.g;
+  jsState["dynB"] = pal.b;
 
   for (int i = 0; i < NUM_PALETTE; i ++) {
-    JsonObject c = jsPalette.createNestedObject();
-    c["r"] = settings.palette[i].r;
-    c["g"] = settings.palette[i].g;
-    c["b"] = settings.palette[i].b;
+    const JsonObject col = jsPalette.createNestedObject();
+    col["r"] = settings.palette[i].r;
+    col["g"] = settings.palette[i].g;
+    col["b"] = settings.palette[i].b;
   }
 
 
@@ -206,7 +210,7 @@ static void handleApiGet(const Settings &settings, const State &state, const Eff
 
 static void handleApiPost(Settings &settings, State &state, const StripSettings &stripSettings, bool sendResult) {
   Serial.println(String("StackSize at start of post: ") + uxTaskGetStackHighWaterMark(NULL));
-  bool wasOn = settings.on;
+  const bool wasOn = settings.on >= 0;
   DynamicJsonDocument jsonDocument(2536);
   String jsonString(server.arg("plain"));
   Serial.print("POST: ");
@@ -220,9 +224,9 @@ static void handleApiPost(Settings &settings, State &state, const StripSettings 
     JsonObject root = jsonDocument.as<JsonObject>();
     JsonObject jsSettings = root["settings"];
     if (jsSettings.containsKey("on")) {
-      bool on = jsSettings["on"];
-      Serial.println(String("on: ") + on);
-      settings.on = on;
+      const bool isOn = jsSettings["on"];
+      Serial.println(String("on: ") + isOn);
+      settings.on = (uint8_t) isOn;
       res = "SETON OK";
     }
     if (jsSettings.containsKey("bri")) {
@@ -250,12 +254,12 @@ static void handleApiPost(Settings &settings, State &state, const StripSettings 
     if (jsSettings.containsKey("setpal")) {
       JsonObject jsSetPal = jsSettings["setpal"];
       if (jsSetPal.containsKey("idx")) {
-        uint8_t idx = jsSetPal["idx"];
+        const uint8_t idx = jsSetPal["idx"];
         if (idx < NUM_PALETTE) {
-          uint8_t r = jsSetPal["r"];
-          uint8_t g = jsSetPal["g"];
-          uint8_t b = jsSetPal["b"];
-          settings.palette[idx] = {r, g, b};
+          const uint8_t red = jsSetPal["r"];
+          const uint8_t green = jsSetPal["g"];
+          const uint8_t blue = jsSetPal["b"];
+          settings.palette[idx] = {red, green, blue};
         }
       }
     }
@@ -275,12 +279,12 @@ static void handleLedsGet(const Led &led) {
   JsonObject jsRoot = jsonDocument.to<JsonObject>();
   JsonArray jsLeds = jsRoot.createNestedArray("leds");
   for (uint16_t i = 0; i < led.stripSettings.NUM_LEDS; i ++) {
-    JsonObject c = jsLeds.createNestedObject();
-    INTERNAL_RGBW l = led.getLedc(i);
-    c["r"] = l.r;
-    c["g"] = l.g;
-    c["b"] = l.b;
-    c["w"] = l.w;
+    const JsonObject col = jsLeds.createNestedObject();
+    const INTERNAL_RGBW ledCol = led.getLedc(i);
+    col["r"] = ledCol.r;
+    col["g"] = ledCol.g;
+    col["b"] = ledCol.b;
+    col["w"] = ledCol.w;
   }
   String jsonString;
   serializeJson(jsonDocument, jsonString);
@@ -304,7 +308,7 @@ static void handleSpa(Settings &settings, State &state, const StripSettings &str
 
 static void handleSetupRedir() {
   server.sendHeader("location", "/");
-  server.send(301, "application/text", "redirect to root");
+  server.send(HTTP_REDIRECT, "application/text", "redirect to root");
 }
 
 static void handleSetup() {

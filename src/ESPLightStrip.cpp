@@ -11,7 +11,7 @@
 #include "effects.h"
 #include "mqtt.h"
 
-static const bool DEBUG_TIMING = 1;
+static const bool DEBUG_TIMING = true;
 
 static Led *leds[NUM_STRIPS];
 static Effects *effects[NUM_STRIPS];
@@ -57,7 +57,7 @@ static void initLeds() {
 
 static void setLeds() {
   for (uint8_t i = 0; i < NUM_STRIPS; i++) {
-    Settings &settings = strip_settings[i];
+    const Settings &settings = strip_settings[i];
     switch (settings.mode) {
       default:
       case 0:
@@ -81,6 +81,9 @@ static void setLeds() {
   }
 }
 
+static const uint16_t MinChangeDelta = 1000;
+static const uint16_t SleepDelay = 200;
+
 void loop() {
   handleWiFi(leds, effects);
   handleServer();
@@ -88,11 +91,11 @@ void loop() {
   handleMqtt();
   bool change = false;
   for (uint8_t i = 0; i < NUM_STRIPS; i++) {
-    Settings &settings = strip_settings[i];
+    const Settings &settings = strip_settings[i];
     State &state = strip_states[i];
     updateState(settings, state, i, STRIP_SETTINGS[i].NUM_LEDS);
     setLeds();
-    if (leds[i]->getLastLedChangeDelta() <= 1000) {
+    if (leds[i]->getLastLedChangeDelta() <= MinChangeDelta) {
       change = true;
     }
     state.tick++;
@@ -102,7 +105,7 @@ void loop() {
     if (DEBUG_TIMING) {
       Serial.print("~");
     }
-    wiFiGoToSleep(200);
+    wiFiGoToSleep(SleepDelay);
   }
 }
 

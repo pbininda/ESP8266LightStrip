@@ -2,11 +2,14 @@
 #include "LED.h"
 #include "state.h"
 
-static const int DEBUG_LED = 0;
-static const int DEBUG_LED_NO_OUT = 0;
+static const bool DEBUG_LED = false;
+static const bool DEBUG_LED_NO_OUT = false;
 static const int NUM_LED_DEBUG = 4;
 static const int LED_PIN = 21;
 static const int CLOCK_PIN = 19;
+
+static const uint8_t BITS_PER_BYTE = 8U;
+static const uint16_t LOW_8_BITS = 255;
 
 Led::Led(uint8_t stripNo, const State &state) :
     stripSettings(STRIP_SETTINGS[stripNo]),
@@ -17,8 +20,8 @@ Led::Led(uint8_t stripNo, const State &state) :
 {
 }
 
-void Led::setLed(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
-  setLedc(n, ledColor(r, g, b, w));
+void Led::setLed(uint16_t n, uint8_t red, uint8_t green, uint8_t blue, uint8_t white) {
+  setLedc(n, ledColor(red, green, blue, white));
 }
 
 uint32_t Led::getLed(uint16_t n) const {
@@ -33,37 +36,33 @@ time_t Led::getLastLedChangeDelta() const {
   return state.now - lastLedChange;
 }
 
-uint32_t Led::ledColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w) const {
-  uint32_t c = w;
-  c <<= 8;
-  c |= r;
-  c <<= 8;
-  c |= g;
-  c <<= 8;
-  c |= b;
-  return c;
+uint32_t Led::ledColor(uint8_t red, uint8_t green, uint8_t blue, uint8_t white) {
+  uint32_t col = white;
+  col <<= BITS_PER_BYTE;
+  col |= red;
+  col <<= BITS_PER_BYTE;
+  col |= green;
+  col <<= BITS_PER_BYTE;
+  col |= blue;
+  return col;
 }
 
-void Led::setLedc(uint16_t n, uint32_t c) {
-  uint32_t oldC = getLed(n);
-  if (oldC != c) {
+void Led::setLedc(uint16_t n, uint32_t col) {
+  const uint32_t oldC = getLed(n);
+  if (oldC != col) {
     lastLedChange = state.now;
     ledsChanged = true;
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-    uint8_t w;
-    b = c & 255;
-    c >>= 8;
-    g = c & 255;
-    c >>= 8;
-    r = c & 255;
-    c >>= 8;
-    w = c & 255;
-    leds[n].r = r;
-    leds[n].g = g;
-    leds[n].b = b;
-    leds[n].w = w;
+    const uint8_t blue = col & LOW_8_BITS;
+    col >>= BITS_PER_BYTE;
+    const uint8_t green = col & LOW_8_BITS;
+    col >>= BITS_PER_BYTE;
+    const uint8_t red = col & LOW_8_BITS;
+    col >>= BITS_PER_BYTE;
+    const uint8_t white = col & LOW_8_BITS;
+    leds[n].r = red;
+    leds[n].g = green;
+    leds[n].b = blue;
+    leds[n].w = white;
   }
 }
 
@@ -86,10 +85,8 @@ bool Led::sendLeds() {
     ledsChanged = false;
     return true;
   }
-  else {
-    if (DEBUG_LED && DEBUG_LED_NO_OUT) {
-      Serial.println("No LED output");
-    }
-    return false;
+  if (DEBUG_LED && DEBUG_LED_NO_OUT) {
+    Serial.println("No LED output");
   }
+  return false;
 }

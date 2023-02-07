@@ -19,7 +19,7 @@ class Led {
     public:
         Led(uint8_t stripNo, const State &state);
 
-        uint32_t ledColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w) const;
+        static uint32_t ledColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w);
         void setLed(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w);
         void setLedc(uint16_t n, uint32_t c);
         uint32_t getLed(uint16_t n) const;
