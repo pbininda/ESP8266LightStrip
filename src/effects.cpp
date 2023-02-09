@@ -78,9 +78,9 @@ static uint16_t cyclePos(const State &state, const Settings &settings) {
 
 void Effects::setLedsFixed() {
   for (uint16_t i = 0; i < stripSettings.NUM_LEDS; i++) {
-    struct palette p = dynGradColor(i);
-    uint32_t c = led.ledColor(p.r, p.g, p.b, settings.bri2);
-    setDynLed(state, settings, led, stripSettings, i, c);
+    Palette pal = dynGradColor(i);
+    uint32_t col = led.ledColor(pal.r, pal.g, pal.b, settings.bri2);
+    setDynLed(state, settings, led, stripSettings, i, col);
   }
 }
 
@@ -102,7 +102,7 @@ void Effects::setLedsZylon() {
   }
   const int16_t swipePos = swipeTPos * stripSettings.NUM_LEDS / 512;
   for (uint16_t i = 0; i < stripSettings.NUM_LEDS; i++) {
-    struct palette p = dynGradColor(i);
+    Palette p = dynGradColor(i);
     uint32_t cLow = led.ledColor(p.r, p.g, p.b, briOff);
     uint32_t cHigh = led.ledColor(p.r, p.g, p.b, briOn);
     if (i < swipePos - swipeHalfWidth || i > swipePos + swipeHalfWidth) {
@@ -115,7 +115,7 @@ void Effects::setLedsZylon() {
 }
 
 
-struct palette Effects::dynGradColor(uint16_t ledIdx) const {
+Palette Effects::dynGradColor(uint16_t ledIdx) const {
   if (settings.ngradient <= 1) {
     return {
       r: (uint8_t) (state.dynFactor * settings.palette[settings.colidx].r / 256),
@@ -138,8 +138,8 @@ struct palette Effects::dynGradColor(uint16_t ledIdx) const {
     uint16_t gradLen = stripSettings.NUM_LEDS / (settings.ngradient - 1);
     uint16_t gradPos = ledIdx - gradLen * gradNum1;
     uint32_t gradPos256 = gradPos * 255 / gradLen;
-    const struct palette p1 = settings.palette[(settings.colidx + gradNum1) % NUM_PALETTE];
-    const struct palette p2 = settings.palette[(settings.colidx + gradNum2) % NUM_PALETTE];
+    const Palette p1 = settings.palette[(settings.colidx + gradNum1) % NUM_PALETTE];
+    const Palette p2 = settings.palette[(settings.colidx + gradNum2) % NUM_PALETTE];
     uint32_t r = (p1.r * (255 - gradPos256) + p2.r * gradPos256) / 256;
     if (r > 255) r = 255;
     uint32_t g = (p1.g * (255 - gradPos256) + p2.g * gradPos256) / 256;

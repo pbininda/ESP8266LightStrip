@@ -1,5 +1,4 @@
-#ifndef _SETTINGS_H_
-#define _SETTINGS_H_
+#pragma once
 
 #include <stdint.h>
 
@@ -58,6 +57,4 @@ static constexpr StripSettings STRIP_SETTINGS[NUM_STRIPS] = {
 };
 #else
 #error define a system config
-#endif
-
 #endif

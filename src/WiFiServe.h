@@ -1,5 +1,4 @@
-#ifndef _WIFI_H_
-#define _WIFI_H_
+#pragma once
 
 #include "state.h"
 #include "led.h"
@@ -11,6 +10,3 @@ extern void wiFiGoToSleep(uint32_t delayMs);
 extern void startWiFiPortal();
 
 extern String wiFiMac;
-
-#endif
-

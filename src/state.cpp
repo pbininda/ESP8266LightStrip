@@ -3,10 +3,10 @@
 #include <Arduino.h>
 #include "state.h"
 
-struct state strip_states[NUM_STRIPS];
-struct settings strip_settings[NUM_STRIPS];
+State strip_states[NUM_STRIPS];
+Settings strip_settings[NUM_STRIPS];
 
-void updateState(const struct settings &settings, struct state &state, uint8_t strip, uint8_t numLeds) {
+void updateState(const Settings &settings, State &state) {
   state.now = millis();
   if (settings.on) {
     if (state.now >= state.riseStart && state.now < state.riseStop) {
@@ -27,7 +27,7 @@ void updateState(const struct settings &settings, struct state &state, uint8_t s
   state.dynFactor = settings.bri;
 }
 
-void initState(const struct settings &settings, struct state &state) {
+void initState(const Settings &settings, State &state) {
   state.dynLevel = 0;
   state.now = millis();
   state.riseStart = state.now;

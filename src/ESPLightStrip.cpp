@@ -93,7 +93,7 @@ void loop() {
   for (uint8_t i = 0; i < NUM_STRIPS; i++) {
     const Settings &settings = strip_settings[i];
     State &state = strip_states[i];
-    updateState(settings, state, i, STRIP_SETTINGS[i].NUM_LEDS);
+    updateState(settings, state);
     setLeds();
     if (leds[i]->getLastLedChangeDelta() <= MinChangeDelta) {
       change = true;

@@ -22,7 +22,7 @@ void initWiFi() {
   // Connect to WiFi network
   static uint8_t MAC_STA[]                = {0,0,0,0,0,0};
   Serial.print("MAC[STA]");
-  uint8_t *MAC  = WiFi.macAddress(MAC_STA);                   //get MAC address of STA interface
+  uint8_t *MAC  = WiFi.macAddress(MAC_STA);                   //get MAC address of STA interface // NOLINT(cppcoreguidelines-init-variables)
 
   wiFiMac = "";
   for (uint8_t i = 0; i < (uint8_t) (sizeof(MAC)+2); ++i){

@@ -9,6 +9,7 @@
 #include "LED.h"
 #include "WiFiServe.h"
 #include "index.h"
+#include "values.h"
 
 static uint16_t briLevels[] = {4, 16, 64, 256}; // NOLINT
 static uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof briLevels[0]);
@@ -46,7 +47,7 @@ static void sendJsonResult(const String resp) {
 }
 
 static String statusBody(const State &state,const Led &led, const Effects &effects) {
-  String res("");
+  String res(""); // NOLINT(cppcoreguidelines-init-variables)
   res += "<p>V2</p>";
   if (state.riseStart != 0 || state.riseStop != 0) {
     res += "<p>Rise time: " + String(state.riseStart - state.now) + " &rArr; " + String(state.riseStop - state.now) + "</p>";
@@ -56,7 +57,7 @@ static String statusBody(const State &state,const Led &led, const Effects &effec
   }
   res += "<p>Dyn Level: " + String(state.dynLevel) + "</p>";
   res += "<p>Dyn Factor: " + String(state.dynFactor) + "</p>";
-  const struct palette pal = effects.dynGradColor(0);
+  const Palette pal = effects.dynGradColor(0);
   res += "<p>DynR: " + String(pal.r);
   res += "   DynG: " + String(pal.g);
   res += "   DynB: " + String(pal.b) + "</p>";
@@ -65,12 +66,12 @@ static String statusBody(const State &state,const Led &led, const Effects &effec
 }
 
 static String numInput(const char *label, const char *name, long min, long max, int value) {
-  return String("<label>") + label + ":</label><input name=\"" + name + "\" type=\"number\" min=\"" + String(min) + " \" max=\"" + String(max) + "\" value=\"" + String(value) + "\"></p>";
+  return String("<label>") + label + R"(:</label><input name=")" + name + R"(" type="number" min=")" + String(min) + R"( " max=")" + String(max) + R"(" value=")" + String(value) + R"("></p>)";
 }
 
 static String formBody(const Settings &settings, int8_t strip) {
-  String strp = (strip < 0 ? "" : String(strip));
-  String res("<form action=\"/{{STRIP}}\" method=\"post\">");
+  String strp = (strip < 0 ? "" : String(strip)); // NOLINT(cppcoreguidelines-init-variables)
+  String res(R"(<form action="/{{STRIP}}" method="post">)"); // NOLINT(cppcoreguidelines-init-variables)
   res += String("<p>") + numInput("On", "on", 0, 1, settings.on) + numInput("Mode", "mode", 0, NUM_MODES - 1, settings.mode) + numInput("OnOff Mode", "onoffmode", 0, ONOFFMODE_LAST - 1, settings.onoffmode) + "</p>";
   res +=         "<p>" + numInput("Color Index", "colidx", 0, NUM_PALETTE - 1, settings.colidx) + "</p>";
   res +=         "<p>" + numInput("Gradient Length", "ngradient", 0, NUM_PALETTE - 1, settings.ngradient) + "</p>";
@@ -81,16 +82,16 @@ static String formBody(const Settings &settings, int8_t strip) {
   res +=                 numInput("Fall", "fall", 0, 10000, settings.fall) + "</p>";
   res +=         "<button type=\"submit\">Set</button>";
   res +=         "</form>\r\n";
-  res += "<p><a href=\"/{{STRIP}}\">Reload</a></p>\r\n";
-  res += "<form action=\"/setup\" method=\"post\">";
-  res += "<button type=\"submit\">Reset WiFi</button>";
+  res += R"(<p><a href="/{{STRIP}}">Reload</a></p>\r\n)";
+  res += R"(<form action="/setup" method="post">)";
+  res += R"(<button type="submit">Reset WiFi</button>)";
   res += "</form>\r\n";
   res.replace("{{STRIP}}", strp);
   return res;
 }
 
 static bool extractArg8(const char *arg, uint8_t &target) {
-  String str = server.arg(arg);
+  String str = server.arg(arg); // NOLINT(cppcoreguidelines-init-variables)
   if (str.length() > 0) {
     target = str.toInt();
     return true;
@@ -99,7 +100,7 @@ static bool extractArg8(const char *arg, uint8_t &target) {
 }
 
 static bool extractArg16(const char *arg, uint16_t &target) {
-  String str = server.arg(arg);
+  String str = server.arg(arg); // NOLINT(cppcoreguidelines-init-variables)
   if (str.length() > 0) {
     target = str.toInt();
     return true;
@@ -108,7 +109,7 @@ static bool extractArg16(const char *arg, uint16_t &target) {
 }
 
 static bool extractArg32(const char *arg, uint32_t &target) {
-  String str = server.arg(arg);
+  String str = server.arg(arg); // NOLINT(cppcoreguidelines-init-variables)
   if (str.length() > 0) {
     target = str.toInt();
     return true;
@@ -189,20 +190,20 @@ static void handleApiGet(const Settings &settings, const State &state, const Eff
   jsState["dynLevel"] = state.dynLevel;
   jsState["dynFactor"] = state.dynFactor;
 
-  const struct palette pal = effects.dynGradColor(0);
+  const Palette pal = effects.dynGradColor(0);
   jsState["dynR"] = pal.r;
   jsState["dynG"] = pal.g;
   jsState["dynB"] = pal.b;
 
-  for (int i = 0; i < NUM_PALETTE; i ++) {
+  for (const Palette pal: settings.palette) {
     const JsonObject col = jsPalette.createNestedObject();
-    col["r"] = settings.palette[i].r;
-    col["g"] = settings.palette[i].g;
-    col["b"] = settings.palette[i].b;
+    col["r"] = pal.r;
+    col["g"] = pal.g;
+    col["b"] = pal.b;
   }
 
 
-  String jsonString;
+  String jsonString; // NOLINT(cppcoreguidelines-init-variables)
   serializeJson(jsonDocument, jsonString);
   // Serial.println(jsonString);
   sendJsonResult(jsonString);
@@ -212,11 +213,11 @@ static void handleApiPost(Settings &settings, State &state, const StripSettings 
   Serial.println(String("StackSize at start of post: ") + uxTaskGetStackHighWaterMark(NULL));
   const bool wasOn = settings.on >= 0;
   DynamicJsonDocument jsonDocument(2536);
-  String jsonString(server.arg("plain"));
+  String jsonString(server.arg("plain")); // NOLINT(cppcoreguidelines-init-variables)
   Serial.print("POST: ");
   Serial.println(jsonString);
   DeserializationError error = deserializeJson(jsonDocument, jsonString);
-  String res = "OK";
+  String res = "OK"; // NOLINT(cppcoreguidelines-init-variables)
   if (error) {
     Serial.println(error.c_str());
     res = String("FAIL ") + error.c_str();
@@ -224,21 +225,21 @@ static void handleApiPost(Settings &settings, State &state, const StripSettings 
     JsonObject root = jsonDocument.as<JsonObject>();
     JsonObject jsSettings = root["settings"];
     if (jsSettings.containsKey("on")) {
-      const bool isOn = jsSettings["on"];
+      const bool isOn = static_cast<bool>(jsSettings["on"]);
       Serial.println(String("on: ") + isOn);
-      settings.on = (uint8_t) isOn;
+      settings.on = static_cast<uint8_t>(isOn);
       res = "SETON OK";
     }
     if (jsSettings.containsKey("bri")) {
       settings.bri = jsSettings["bri"];
-      settings.bri %= 257;
+      settings.bri %= NUM_IN_BYTE + 1;
     }
     if (jsSettings.containsKey("bri2")) {
       settings.bri2 = jsSettings["bri2"];
       if (settings.bri2 > stripSettings.MAX_BRI2) {
         settings.bri2 = stripSettings.MAX_BRI2;
       }
-      settings.bri2 %= 32;
+      settings.bri2 %= BRI2_MAXIMUM;
     }
     if (jsSettings.containsKey("colidx")) {
       settings.colidx = jsSettings["colidx"];
@@ -286,21 +287,21 @@ static void handleLedsGet(const Led &led) {
     col["b"] = ledCol.b;
     col["w"] = ledCol.w;
   }
-  String jsonString;
+  String jsonString; // NOLINT(cppcoreguidelines-init-variables)
   serializeJson(jsonDocument, jsonString);
   // Serial.println(jsonString);
   sendJsonResult(jsonString);
 }
 
 static String index() {
-  String res(HTTP_MAIN);
+  String res(HTTP_MAIN); // NOLINT(cppcoreguidelines-init-variables)
   return res;
 }
 
 static void handleSpa(Settings &settings, State &state, const StripSettings &stripSettings, int8_t strip) {
-  String strp = strip < 0 ? "" : String("/") + String(strip);
+  String strp = strip < 0 ? "" : String("/") + String(strip); // NOLINT(cppcoreguidelines-init-variables)
   extractArgs(settings, state);
-  String indexData = index();
+  String indexData = index(); // NOLINT(cppcoreguidelines-init-variables)
   indexData.replace("{{SYSTEM_NAME}}", stripSettings.STRIP_NAME);
   indexData.replace("{{STRIP}}", strp);
   sendResult(indexData);
@@ -337,7 +338,7 @@ void initServer(Settings *settings, State *state, Led **led, Effects **effects) 
   server.on("/setup", HTTP_GET, handleSetupRedir);
   Serial.println(String("Setting up ") + String(NUM_STRIPS) + " strip routes");
   for (uint8_t i = 0; i < NUM_STRIPS; i++) {
-    String strip(i);
+    String strip(i); // NOLINT(cppcoreguidelines-init-variables)
     Serial.println("Setting routes for /" + strip);
     server.on("/" + strip, HTTP_GET, [=]() { handleIndex(settings[i], state[i], *led[i], *effects[i], STRIP_SETTINGS[i], i); });
     server.on("/" + strip, HTTP_POST, [=]() { handleSet(settings[i], state[i], *led[i], *effects[i], STRIP_SETTINGS[i], i, true); });

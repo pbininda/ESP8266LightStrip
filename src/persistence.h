@@ -1,8 +1,4 @@
-#ifndef _PERSISTENCE_H_
-#define _PERSISTENCE_H_
+#pragma once
 
 extern void writeSettings();
 extern void readSettings();
-
-#endif
-

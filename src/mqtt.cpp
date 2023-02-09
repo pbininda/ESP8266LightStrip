@@ -37,7 +37,7 @@ static void publish(const String &topic, const String &payload) {
 }
 
 static void publish(const String &topic, const JsonDocument &json) {
-    String jsonString;
+    String jsonString; // NOLINT(cppcoreguidelines-init-variables)
     serializeJson(json, jsonString);
     publish(topic, jsonString);
 }
@@ -100,7 +100,7 @@ static String getJsonState(int8_t stripNo) {
     root["state"] = strip_settings[stripNo].on ? "ON" : "OFF";
     root["brightness"] = strip_settings[stripNo].bri;
     root["effect"] = strip_settings[stripNo].mode == 2 ? "wheel" : strip_settings[stripNo].mode == 1 ? "zylon" : "fixed";
-    String state;;
+    String state;; // NOLINT(cppcoreguidelines-init-variables)
     serializeJson(jsonDocument, state);
     return state;
 }
@@ -108,7 +108,7 @@ static String getJsonState(int8_t stripNo) {
 static void publishState() {
     static String lastJsonState[NUM_STRIPS + 1];
     for (int8_t i = -1; i < NUM_STRIPS; i++) {
-        String state = getJsonState(i);
+        String state = getJsonState(i); // NOLINT(cppcoreguidelines-init-variables)
         if (lastJsonState[i+1] != state) {
             String topic = stateTopic(i);
             Serial.println("state changed: " + String(i) + " " + topic + " " +state);
@@ -138,7 +138,7 @@ void applyPayloadToStrip(uint8_t stripNo, JsonObject &root) {
         strip_settings[stripNo].bri = brightness;
     }
     if (root.containsKey("effect")) {
-        String effect = root["effect"];
+        String effect = root["effect"]; // NOLINT(cppcoreguidelines-init-variables)
         if (effect == "fixed") {
             strip_settings[stripNo].mode = 0;
         } else if (effect == "zylon") {
@@ -151,7 +151,7 @@ void applyPayloadToStrip(uint8_t stripNo, JsonObject &root) {
 
 void handleMqttMessage(char* p_topic, byte* p_payload, unsigned int p_length) {
     // concatenates the payload into a string
-    String payload;
+    String payload; // NOLINT(cppcoreguidelines-init-variables)
     for (uint8_t i = 0; i < p_length; i++) {
         payload.concat((char)p_payload[i]);
     }

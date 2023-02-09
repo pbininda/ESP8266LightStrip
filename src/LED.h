@@ -1,5 +1,4 @@
-#ifndef _LED_H_
-#define _LED_H_
+#pragma once
 
 #define FASTLED_USE_GLOBAL_BRIGHTNESS 1
 #include <FastLED.h>
@@ -45,10 +44,8 @@ class Led {
 
 
         INTERNAL_RGBW *leds;
-        void *fastLeds;
+        CRGB *fastLeds;
         bool ledsChanged = false;
         time_t lastLedChange = 0;
 
 };
-
-#endif

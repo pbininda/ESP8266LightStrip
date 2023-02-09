@@ -1,5 +1,4 @@
-#ifndef _EFFECTS_H_
-#define _EFFECTS_H_
+#pragma once
 
 #include "settings.h"
 #include "state.h"
@@ -19,7 +18,7 @@ class Effects {
         void setLedsZylon();
         void setLedsRainbowCycle();
 
-        struct palette dynGradColor(uint16_t ledIdx) const;
+        Palette dynGradColor(uint16_t ledIdx) const;
 
 
     private:
@@ -29,5 +28,3 @@ class Effects {
         const State &state;
         Led &led;
 };
-
-#endif

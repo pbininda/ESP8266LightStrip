@@ -1,7 +1,4 @@
-#ifndef _OTA_H_
-#define _OTA_H_
+#pragma once
 
 extern void initOta();
 extern void handleOta();
-
-#endif
