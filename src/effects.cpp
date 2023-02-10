@@ -4,59 +4,62 @@
 #include "LED.h"
 #include "state.h"
 #include "effects.h"
+#include "values.h"
 
 // Input a value 0 to 255 to get a color value.
 // The colours are a transition r - g - b - back to r.
 static uint32_t wheel(const Led &led, uint16_t bri, uint8_t wheelPos) {
-  wheelPos = 255 - wheelPos;
-  if(wheelPos < 85) {
-    return led.ledColor(255 - wheelPos * 3, 0, wheelPos * 3, bri);
+  wheelPos = LOW_8_BITS - wheelPos;
+  if(wheelPos < LOW_8_BITS / 3) {
+    return Led::ledColor(LOW_8_BITS - wheelPos * 3, 0, wheelPos * 3, bri);
   }
-  if(wheelPos < 170) {
-    wheelPos -= 85;
-    return led.ledColor(0, wheelPos * 3, 255 - wheelPos * 3, bri);
+  if(wheelPos < LOW_8_BITS * 2 / 3) {
+    wheelPos -= LOW_8_BITS / 3;
+    return Led::ledColor(0, wheelPos * 3, LOW_8_BITS - wheelPos * 3, bri);
   }
-  wheelPos -= 170;
-  return led.ledColor(wheelPos * 3, 255 - wheelPos * 3, 0, bri);
+  wheelPos -= NUM_IN_BYTE * 2 / 3;
+  return Led::ledColor(wheelPos * 3, LOW_8_BITS - wheelPos * 3, 0, bri);
 }
 
-static uint32_t adjusted_brightness(uint32_t c, uint32_t partOfDynRange) {
-    uint8_t bri = (c >> 24);
-    uint32_t briAdj = bri * partOfDynRange / DYNRANGE;
-    return (briAdj << 24) | (c & 0xFFFFFF);
+static uint32_t adjusted_brightness(uint32_t col, uint32_t partOfDynRange) {
+    const uint8_t bri = (col >> MAX_BRI);
+    const uint32_t briAdj = bri * partOfDynRange / DYNRANGE;
+    return (briAdj << MAX_BRI) | (col & UINT16_MAX);
 }
 
-static void setDynLed(const State &state, const Settings &settings, Led &led, const StripSettings &stripSettings, uint16_t n, uint32_t c) {
-  uint8_t mode = settings.onoffmode;
+static void setDynLed(const State &state, const Settings &settings, Led &led, const StripSettings &stripSettings, uint16_t n, uint32_t col) {
+  const uint8_t mode = settings.onoffmode;
   if (mode == GRADUAL) {
-    led.setLedc(n, adjusted_brightness(c, state.dynLevel));
+    led.setLedc(n, adjusted_brightness(col, state.dynLevel));
   } else if (mode == OUTSIDE_IN || mode == INSIDE_OUT || mode == OUTSIDE_IN_SOFT || mode == INSIDE_OUT_SOFT) {
-    int32_t p = (int32_t) stripSettings.NUM_LEDS - n * 2 - 1;
-    if (p < 0) p = -p;
-    if (mode == OUTSIDE_IN || mode == OUTSIDE_IN_SOFT) {
-      p = stripSettings.NUM_LEDS - p;
+    int32_t point = stripSettings.NUM_LEDS - n * 2 - 1;
+    if (point < 0) {
+      point = -point;
     }
-    int32_t mark = state.dynLevel * ((uint32_t ) stripSettings.NUM_LEDS) / DYNRANGE;
-    if (p < mark) {
+    if (mode == OUTSIDE_IN || mode == OUTSIDE_IN_SOFT) {
+      point = stripSettings.NUM_LEDS - point;
+    }
+    const int32_t mark = state.dynLevel * static_cast<uint32_t>(stripSettings.NUM_LEDS) / DYNRANGE;
+    if (point < mark) {
       if (mode == OUTSIDE_IN_SOFT || mode == INSIDE_OUT_SOFT) {
-        led.setLedc(n, adjusted_brightness(c, state.dynLevel));
+        led.setLedc(n, adjusted_brightness(col, state.dynLevel));
       } else {
-        led.setLedc(n, c);
+        led.setLedc(n, col);
       }
     }
     else {
       led.setLedc(n, 0);
     }
   } else if (mode == LTR || mode == RTL || mode == LTR_SOFT || mode == RTL_SOFT) {
-    int32_t p = n;
+    int32_t point = n;
     if (mode == RTL) {
-      p = stripSettings.NUM_LEDS - n - 1;
+      point = stripSettings.NUM_LEDS - n - 1;
     }
-    if (p < state.dynLevel * (uint32_t ) stripSettings.NUM_LEDS / DYNRANGE) {
+    if (point < state.dynLevel * static_cast<uint32_t>(stripSettings.NUM_LEDS) / DYNRANGE) {
       if (mode == LTR_SOFT || mode == RTL_SOFT) {
-        led.setLedc(n, adjusted_brightness(c, state.dynLevel));        
+        led.setLedc(n, adjusted_brightness(col, state.dynLevel));        
       } else {
-        led.setLedc(n, c);
+        led.setLedc(n, col);
       }
     }
     else {
@@ -64,7 +67,7 @@ static void setDynLed(const State &state, const Settings &settings, Led &led, co
     }
   } else {
     if (state.dynLevel > 0) {
-      led.setLedc(n, c);
+      led.setLedc(n, col);
     } else {
       led.setLedc(n, 0);
     }
@@ -72,22 +75,22 @@ static void setDynLed(const State &state, const Settings &settings, Led &led, co
 }
 
 static uint16_t cyclePos(const State &state, const Settings &settings) {
-  uint32_t cycle = state.now % settings.cycle;
-  return cycle * 1024 / settings.cycle;
+  const uint32_t cycle = state.now % settings.cycle;
+  return cycle * CYCLE_SCALE / settings.cycle;
 }
 
 void Effects::setLedsFixed() {
   for (uint16_t i = 0; i < stripSettings.NUM_LEDS; i++) {
-    Palette pal = dynGradColor(i);
-    uint32_t col = led.ledColor(pal.r, pal.g, pal.b, settings.bri2);
+    const Palette pal = dynGradColor(i);
+    const uint32_t col = Led::ledColor(pal.r, pal.g, pal.b, settings.bri2);
     setDynLed(state, settings, led, stripSettings, i, col);
   }
 }
 
 void Effects::setLedsRainbowCycle() {
-  uint32_t offset = cyclePos(state, settings);
+  const uint32_t offset = cyclePos(state, settings);
   for(uint16_t i=0; i < stripSettings.NUM_LEDS; i++) {
-    setDynLed(state, settings, led, stripSettings, i, wheel(led, settings.bri2, ((i + (offset * stripSettings.NUM_LEDS / 1024)) * 256 / stripSettings.NUM_LEDS) & 255));
+    setDynLed(state, settings, led, stripSettings, i, wheel(led, settings.bri2, ((i + (offset * stripSettings.NUM_LEDS / CYCLE_SCALE)) * NUM_IN_BYTE / stripSettings.NUM_LEDS) & LOW_8_BITS));
   }
 }
 
@@ -96,15 +99,15 @@ void Effects::setLedsZylon() {
   const uint16_t briOff = settings.bri2 / 4;
   const uint16_t briOn = settings.bri2;
   uint16_t swipeTPos = cyclePos(state, settings);
-  if (swipeTPos > 512) {
-    swipeTPos -= 512;
-    swipeTPos = 512 - swipeTPos;
+  if (swipeTPos > NUM_IN_BYTE * 2) {
+    swipeTPos -= NUM_IN_BYTE * 2;
+    swipeTPos = NUM_IN_BYTE * 2 - swipeTPos;
   }
-  const int16_t swipePos = swipeTPos * stripSettings.NUM_LEDS / 512;
+  const int16_t swipePos = swipeTPos * stripSettings.NUM_LEDS / (NUM_IN_BYTE * 2);
   for (uint16_t i = 0; i < stripSettings.NUM_LEDS; i++) {
-    Palette p = dynGradColor(i);
-    uint32_t cLow = led.ledColor(p.r, p.g, p.b, briOff);
-    uint32_t cHigh = led.ledColor(p.r, p.g, p.b, briOn);
+    const Palette pal = dynGradColor(i);
+    const uint32_t cLow = Led::ledColor(pal.r, pal.g, pal.b, briOff);
+    const uint32_t cHigh = Led::ledColor(pal.r, pal.g, pal.b, briOn);
     if (i < swipePos - swipeHalfWidth || i > swipePos + swipeHalfWidth) {
       setDynLed(state, settings, led, stripSettings, i, cLow);
     }
@@ -118,38 +121,43 @@ void Effects::setLedsZylon() {
 Palette Effects::dynGradColor(uint16_t ledIdx) const {
   if (settings.ngradient <= 1) {
     return {
-      r: (uint8_t) (state.dynFactor * settings.palette[settings.colidx].r / 256),
-      g: (uint8_t) (state.dynFactor * settings.palette[settings.colidx].g / 256),
-      b: (uint8_t) (state.dynFactor * settings.palette[settings.colidx].b / 256)
-    };
-  } else {
-    // example:
-    // NUM_LEDS = 10
-    // ngradient = 2
-    // gradLen = 10 / 1 = 10
-    // gradnum(0) = 0, gradnum(4) = 0, gradnum(5) = 0, gradnum(9) = 0
-    // gradPos(0) = 0, gradPos(4) = 4, gradnum(5) = 5, gradpos(9) = 9
-    // pos256(0)  = 
-    // NUM_LEDS = 10
-    // ngradient = 3
-    // gradnum(0) = 0, gradnum(4) = 0, gradnum(5) = 1, gradnum(9) = 1
-    uint8_t gradNum1 = ledIdx * (settings.ngradient - 1) / stripSettings.NUM_LEDS;
-    uint8_t gradNum2 = (gradNum1 + 1);
-    uint16_t gradLen = stripSettings.NUM_LEDS / (settings.ngradient - 1);
-    uint16_t gradPos = ledIdx - gradLen * gradNum1;
-    uint32_t gradPos256 = gradPos * 255 / gradLen;
-    const Palette p1 = settings.palette[(settings.colidx + gradNum1) % NUM_PALETTE];
-    const Palette p2 = settings.palette[(settings.colidx + gradNum2) % NUM_PALETTE];
-    uint32_t r = (p1.r * (255 - gradPos256) + p2.r * gradPos256) / 256;
-    if (r > 255) r = 255;
-    uint32_t g = (p1.g * (255 - gradPos256) + p2.g * gradPos256) / 256;
-    if (g > 255) g = 255;
-    uint32_t b = (p1.b * (255 - gradPos256) + p2.b * gradPos256) / 256;
-    if (b > 255) b = 255;
-    return {
-      r: (uint8_t) (state.dynFactor * r / 256),
-      g: (uint8_t) (state.dynFactor * g / 256),
-      b: (uint8_t) (state.dynFactor * b / 256)
+      r: static_cast<uint8_t>(state.dynFactor * settings.palette[settings.colidx].r / NUM_IN_BYTE),
+      g: static_cast<uint8_t>(state.dynFactor * settings.palette[settings.colidx].g / NUM_IN_BYTE),
+      b: static_cast<uint8_t>(state.dynFactor * settings.palette[settings.colidx].b / NUM_IN_BYTE)
     };
   }
+  // example:
+  // NUM_LEDS = 10
+  // ngradient = 2
+  // gradLen = 10 / 1 = 10
+  // gradnum(0) = 0, gradnum(4) = 0, gradnum(5) = 0, gradnum(9) = 0
+  // gradPos(0) = 0, gradPos(4) = 4, gradnum(5) = 5, gradpos(9) = 9
+  // pos256(0)  = 
+  // NUM_LEDS = 10
+  // ngradient = 3
+  // gradnum(0) = 0, gradnum(4) = 0, gradnum(5) = 1, gradnum(9) = 1
+  const uint8_t gradNum1 = ledIdx * (settings.ngradient - 1) / stripSettings.NUM_LEDS;
+  const uint8_t gradNum2 = (gradNum1 + 1);
+  const uint16_t gradLen = stripSettings.NUM_LEDS / (settings.ngradient - 1);
+  const uint16_t gradPos = ledIdx - gradLen * gradNum1;
+  const uint32_t gradPos256 = gradPos * LOW_8_BITS / gradLen;
+  const Palette pal1 = settings.palette[(settings.colidx + gradNum1) % NUM_PALETTE];
+  const Palette pal2 = settings.palette[(settings.colidx + gradNum2) % NUM_PALETTE];
+  uint32_t red = (pal1.r * (LOW_8_BITS - gradPos256) + pal2.r * gradPos256) / NUM_IN_BYTE;
+  if (red > LOW_8_BITS) {
+    red = LOW_8_BITS;
+  }
+  uint32_t green = (pal1.g * (LOW_8_BITS - gradPos256) + pal2.g * gradPos256) / NUM_IN_BYTE;
+  if (green > LOW_8_BITS) {
+    green = LOW_8_BITS;
+  }
+  uint32_t blue = (pal1.b * (LOW_8_BITS - gradPos256) + pal2.b * gradPos256) / NUM_IN_BYTE;
+  if (blue > LOW_8_BITS) {
+    blue = LOW_8_BITS;
+  }
+  return {
+    r: static_cast<uint8_t>(state.dynFactor * red / NUM_IN_BYTE),
+    g: static_cast<uint8_t>(state.dynFactor * green / NUM_IN_BYTE),
+    b: static_cast<uint8_t>(state.dynFactor * blue / NUM_IN_BYTE)
+  };
 }

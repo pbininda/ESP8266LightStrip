@@ -64,6 +64,8 @@ void Led::setLedc(uint16_t n, uint32_t col) {
   }
 }
 
+static const int LED_BRI_SCALE = 8;
+
 bool Led::sendLeds() {
   if (ledsChanged) {
     if (DEBUG_LED) {
@@ -77,7 +79,7 @@ bool Led::sendLeds() {
     setLed(stripSettings.NUM_LEDS, 0, 0, 0, 0);
     for (int i = 0; i < stripSettings.NUM_LEDS + 1; i++) {
       fastLeds[i] = CRGB(leds[i].r, leds[i].g, leds[i].b);
-      fastLeds[i].nscale8(leds[i].w * 8);
+      fastLeds[i].nscale8(leds[i].w * LED_BRI_SCALE);
     }
     FastLED.show();
     ledsChanged = false;

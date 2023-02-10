@@ -209,26 +209,11 @@ static void handleApiGet(const Settings &settings, const State &state, const Eff
   sendJsonResult(jsonString);
 }
 
-static void handleApiPost(Settings &settings, State &state, const StripSettings &stripSettings, bool sendResult) {
-  Serial.println(String("StackSize at start of post: ") + uxTaskGetStackHighWaterMark(NULL));
-  const bool wasOn = settings.on >= 0;
-  DynamicJsonDocument jsonDocument(2536);
-  String jsonString(server.arg("plain")); // NOLINT(cppcoreguidelines-init-variables)
-  Serial.print("POST: ");
-  Serial.println(jsonString);
-  DeserializationError error = deserializeJson(jsonDocument, jsonString);
-  String res = "OK"; // NOLINT(cppcoreguidelines-init-variables)
-  if (error) {
-    Serial.println(error.c_str());
-    res = String("FAIL ") + error.c_str();
-  } else {
-    JsonObject root = jsonDocument.as<JsonObject>();
-    JsonObject jsSettings = root["settings"];
+static void extractSettings(Settings &settings, const JsonObject &jsSettings, const StripSettings &stripSettings) {
     if (jsSettings.containsKey("on")) {
       const bool isOn = static_cast<bool>(jsSettings["on"]);
       Serial.println(String("on: ") + isOn);
       settings.on = static_cast<uint8_t>(isOn);
-      res = "SETON OK";
     }
     if (jsSettings.containsKey("bri")) {
       settings.bri = jsSettings["bri"];
@@ -267,6 +252,24 @@ static void handleApiPost(Settings &settings, State &state, const StripSettings 
     if (jsSettings.containsKey("mode")) {
       settings.mode = jsSettings["mode"];
     }
+}
+
+static void handleApiPost(Settings &settings, State &state, const StripSettings &stripSettings, bool sendResult) {
+  Serial.println(String("StackSize at start of post: ") + uxTaskGetStackHighWaterMark(NULL));
+  const bool wasOn = settings.on >= 0;
+  DynamicJsonDocument jsonDocument(2536);
+  String jsonString(server.arg("plain")); // NOLINT(cppcoreguidelines-init-variables)
+  Serial.print("POST: ");
+  Serial.println(jsonString);
+  DeserializationError error = deserializeJson(jsonDocument, jsonString);
+  String res = "OK"; // NOLINT(cppcoreguidelines-init-variables)
+  if (error) {
+    Serial.println(error.c_str());
+    res = String("FAIL ") + error.c_str();
+  } else {
+    JsonObject root = jsonDocument.as<JsonObject>();
+    JsonObject jsSettings = root["settings"];
+    extractSettings(settings, jsSettings, stripSettings);
   }
   processSettings(settings, state, wasOn);
   Serial.println(String("StackSize at end of post: ") + uxTaskGetStackHighWaterMark(NULL));

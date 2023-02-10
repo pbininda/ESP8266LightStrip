@@ -6,7 +6,7 @@
 static bool otaSetupDone = false;
 
 void initOta() {
-  String hostname("ESP32-OTA-");
+  String hostname("ESP32-OTA-"); // NOLINT(cppcoreguidelines-init-variables)
   hostname += String(ESP.getEfuseMac(), HEX);
   WiFi.hostname(hostname);
   Serial.println("Hostname: " + hostname);

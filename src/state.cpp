@@ -8,7 +8,7 @@ Settings strip_settings[NUM_STRIPS];
 
 void updateState(const Settings &settings, State &state) {
   state.now = millis();
-  if (settings.on) {
+  if (settings.on != 0) {
     if (state.now >= state.riseStart && state.now < state.riseStop) {
       state.dynLevel = (state.now - state.riseStart) * DYNRANGE / (state.riseStop - state.riseStart);
     }

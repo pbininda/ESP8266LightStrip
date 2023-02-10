@@ -49,7 +49,7 @@ static void subscribe(const String &topic) {
 
 static void publishOneDiscovery(int8_t stripNo) {
     DynamicJsonDocument jsonDocument(1024);
-    JsonObject root = jsonDocument.to<JsonObject>();
+    const JsonObject root = jsonDocument.to<JsonObject>();
     if (stripNo < 0) {
         root["name"] = String(SYSTEM_NAME) + " Global";
     } else {
@@ -93,11 +93,11 @@ static void publishDiscovery(bool clear) {
 
 static String getJsonState(int8_t stripNo) {
     DynamicJsonDocument jsonDocument(1024);
-    JsonObject root = jsonDocument.to<JsonObject>();
+    const JsonObject root = jsonDocument.to<JsonObject>();
     if (stripNo < 0) {
         stripNo = 0;
     }
-    root["state"] = strip_settings[stripNo].on ? "ON" : "OFF";
+    root["state"] = strip_settings[stripNo].on != 0 ? "ON" : "OFF";
     root["brightness"] = strip_settings[stripNo].bri;
     root["effect"] = strip_settings[stripNo].mode == 2 ? "wheel" : strip_settings[stripNo].mode == 1 ? "zylon" : "fixed";
     String state;; // NOLINT(cppcoreguidelines-init-variables)
@@ -108,9 +108,9 @@ static String getJsonState(int8_t stripNo) {
 static void publishState() {
     static String lastJsonState[NUM_STRIPS + 1];
     for (int8_t i = -1; i < NUM_STRIPS; i++) {
-        String state = getJsonState(i); // NOLINT(cppcoreguidelines-init-variables)
+        const String state = getJsonState(i); // NOLINT(cppcoreguidelines-init-variables)
         if (lastJsonState[i+1] != state) {
-            String topic = stateTopic(i);
+            String topic = stateTopic(i); // NOLINT(cppcoreguidelines-init-variables)
             Serial.println("state changed: " + String(i) + " " + topic + " " +state);
             publish(topic, state);
             lastJsonState[i+1] = state;
@@ -126,19 +126,19 @@ static void publishAvailability() {
 
 void applyPayloadToStrip(uint8_t stripNo, JsonObject &root) {
     if (root.containsKey("state")) {
-        String state = root["state"];
+        const String state = root["state"]; // NOLINT(cppcoreguidelines-init-variables)
         if (state == "ON") {
-            strip_settings[stripNo].on = true;
+            strip_settings[stripNo].on = 1;
         } else {
-            strip_settings[stripNo].on = false;
+            strip_settings[stripNo].on = 0;
         }
     }
     if (root.containsKey("brightness")) {
-        uint8_t brightness = root["brightness"];
+        const uint8_t brightness = root["brightness"];
         strip_settings[stripNo].bri = brightness;
     }
     if (root.containsKey("effect")) {
-        String effect = root["effect"]; // NOLINT(cppcoreguidelines-init-variables)
+        const String effect = root["effect"]; // NOLINT(cppcoreguidelines-init-variables)
         if (effect == "fixed") {
             strip_settings[stripNo].mode = 0;
         } else if (effect == "zylon") {
@@ -153,26 +153,26 @@ void handleMqttMessage(char* p_topic, byte* p_payload, unsigned int p_length) {
     // concatenates the payload into a string
     String payload; // NOLINT(cppcoreguidelines-init-variables)
     for (uint8_t i = 0; i < p_length; i++) {
-        payload.concat((char)p_payload[i]);
+        payload.concat(static_cast<char>(p_payload[i]));
     }
     const char * top1 = strtok(p_topic, "/");
-    if (!top1) {
+    if (top1 == nullptr) {
         return;
     }
-    char * stripId = strtok(0, "/");
-    if (!stripId) {
+    char * stripId = strtok(nullptr, "/");
+    if (stripId == nullptr) {
         return;
     }
-    const char * light = strtok(0, "/");
-    const char * cmd = strtok(0, "/");
+    const char * light = strtok(nullptr, "/");
+    const char * cmd = strtok(nullptr, "/");
     const char * id1  = strtok(stripId, "-");
-    if (!id1) {
+    if (id1 == nullptr) {
         return;
     }
-    const char * id2 = strtok(0, "-");
-    int8_t stripNo;
-    if (id2) {
-        stripNo = atoi(id2);
+    const char * id2 = strtok(nullptr, "-");
+    int8_t stripNo(-1);
+    if (id2 != nullptr) {
+        stripNo = strtol(id2, nullptr, DEC);
     } else {
         id2 = "-1";
         stripNo = -1;
@@ -183,10 +183,8 @@ void handleMqttMessage(char* p_topic, byte* p_payload, unsigned int p_length) {
     }
     DynamicJsonDocument jsonDocument(1024);
     DeserializationError error = deserializeJson(jsonDocument, payload);
-    boolean ok = true;
     if (error) {
         Serial.println(error.c_str());
-        ok = false;
     } else {
         JsonObject root = jsonDocument.as<JsonObject>();
         if (stripNo < 0) {
@@ -220,28 +218,34 @@ static void reconnect() {
   }
 }
 
+static const uint32_t MQTT_BUFFER_SIZE = 2048;
+static const uint32_t MQTT_SERVER_PORT = 1883;
+
 void initMqtt() {
   Serial.print("Resetting WIFI");
-  pubSubClient.setBufferSize(2048);
-  pubSubClient.setServer(mqtt_server, 1883);
+  pubSubClient.setBufferSize(MQTT_BUFFER_SIZE);
+  pubSubClient.setServer(mqtt_server, MQTT_SERVER_PORT);
   pubSubClient.setCallback(handleMqttMessage);
 }
 
+static const uint32_t CONNECT_INTERVAL_MS = 5000;
+static const uint32_t PUBLISH_INTERVAL_MS = 1000;
+
 void handleMqtt() {
     static uint16_t count = 0;
-    unsigned long now = millis();
+    uint32_t now = millis();
 
     if (!pubSubClient.connected()) {
-        static unsigned long lastConnectAttempt = 0;
-        if (now - lastConnectAttempt > 5000) {
+        static uint32_t lastConnectAttempt = 0;
+        if (now - lastConnectAttempt > CONNECT_INTERVAL_MS) {
             reconnect();
             lastConnectAttempt = millis();
         }
     } else {
-        static unsigned long lastSent = 0;
+        static uint32_t lastSent = 0;
         pubSubClient.loop();
         publishState();
-        if (now - lastSent > 1000) {
+        if (now - lastSent > PUBLISH_INTERVAL_MS) {
             publishAvailability();
             // pubSubClient.publish("mqtttest/count", String(count).c_str());
             Serial.print("#");

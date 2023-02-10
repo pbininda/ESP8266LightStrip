@@ -1,7 +1,7 @@
 #pragma once
 
 #include "state.h"
-#include "led.h"
+#include "LED.h"
 #include "effects.h"
 
 extern void initWiFi();

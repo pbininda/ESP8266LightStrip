@@ -4,7 +4,7 @@
 
 #include "secrets.h"
 
-#define SW_VERSION_NO 7
+static const uint16_t SW_VERSION_NO = 7;
 
 typedef struct StripSettings {
     // used in AP Title and HTTP title
