@@ -6,3 +6,4 @@ SSID_PASSWORD.h
 .vscode/ipch
 src/secrets.h
 src/version.cpp
+src/testdata/backup-*.json
