@@ -5,3 +5,4 @@ SSID_PASSWORD.h
 .vscode/launch.json
 .vscode/ipch
 src/secrets.h
+src/version.cpp

@@ -11,8 +11,9 @@ struct header { // NOLINT(altera-struct-pack-align)
 }; // NOLINT(altera-struct-pack-align)
 
 static const uint16_t MAGIC_NUMBER = 0x1ED5;
+static const uint16_t CONFIG_VERSION = 7;
 
-static struct header expectedHeader = {MAGIC_NUMBER, SW_VERSION_NO, NUM_STRIPS};
+static struct header expectedHeader = {MAGIC_NUMBER, CONFIG_VERSION, NUM_STRIPS};
 
 static void printSettings() {
   uint8_t count = 0;

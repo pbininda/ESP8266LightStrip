@@ -4,8 +4,6 @@
 
 #include "secrets.h"
 
-static const uint16_t SW_VERSION_NO = 7;
-
 struct StripSettings {
     // used in AP Title and HTTP title
     uint16_t NUM_LEDS;

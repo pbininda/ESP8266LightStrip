@@ -10,6 +10,7 @@
 #include "WiFiServe.h"
 #include "index.h"
 #include "values.h"
+#include "version.h"
 
 static uint16_t briLevels[] = {4, 16, 64, 256}; // NOLINT
 static uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof briLevels[0]);
@@ -48,7 +49,7 @@ static void sendJsonResult(const String resp) {
 
 static String statusBody(const State &state,const Led &led, const Effects &effects) {
   String res(""); // NOLINT(cppcoreguidelines-init-variables)
-  res += "<p>V2</p>";
+  res += String("<p>Version ") + FIRMWARE_FLAVOUR + " " + FIRMWARE_VERSION + "</p>";
   if (state.riseStart != 0 || state.riseStop != 0) {
     res += "<p>Rise time: " + String(state.riseStart - state.now) + " &rArr; " + String(state.riseStop - state.now) + "</p>";
   }
@@ -353,7 +354,7 @@ void initServer(Settings *settings, State *state, Led **led, Effects **effects) 
   Serial.println("Route Setup done");
   server.begin();
   serverSetupDone = true;
-  Serial.print("Server started on ");
+  Serial.print(String("Server Version ") + FIRMWARE_FLAVOUR + " " + FIRMWARE_VERSION + " started on ");
   Serial.println(WiFi.localIP());
 }
 

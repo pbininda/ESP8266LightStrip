@@ -6,6 +6,7 @@
 #include "WiFiServe.h"
 #include "state.h"
 #include "mqtt.h"
+#include "version.h"
 
 WiFiClient wifiClient;
 PubSubClient pubSubClient(wifiClient);
@@ -73,7 +74,7 @@ static void publishOneDiscovery(int8_t stripNo) {
     device["name"] = String(SYSTEM_NAME) + " Device";
     device["model"] = "ESP Light Strip";
     device["manufacturer"] = "PBininda";
-    device["sw_version"] = SW_VERSION_NO;
+    device["sw_version"] = String(FIRMWARE_FLAVOUR) + " " + FIRMWARE_VERSION;
     // root["rgb"] = true;
     publish(discoveryTopic(stripNo), jsonDocument);
 }
