@@ -7,22 +7,22 @@
 #include "settings.h"
 #include "state.h"
 
-typedef struct internal_rgbw {
-  uint8_t r;
-  uint8_t g;
-  uint8_t b;
-  uint8_t w;
-} INTERNAL_RGBW;
+struct InternalRgbw {
+  uint8_t red;
+  uint8_t green;
+  uint8_t blue;
+  uint8_t white;
+} __attribute__((packed)) __attribute__((aligned(4)));
 
 class Led {
     public:
         Led(uint8_t stripNo, const State &state);
 
-        static uint32_t ledColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w);
-        void setLed(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w);
+        static uint32_t ledColor(const InternalRgbw &rgbwColor);
+        void setLed(uint16_t n, const InternalRgbw &rgbwColor);
         void setLedc(uint16_t n, uint32_t c);
         uint32_t getLed(uint16_t n) const;
-        INTERNAL_RGBW getLedc(uint16_t n) const;
+        InternalRgbw getLedc(uint16_t n) const;
         bool sendLeds();
         time_t getLastLedChangeDelta() const;
 
@@ -43,7 +43,7 @@ class Led {
         const State &state;
 
 
-        INTERNAL_RGBW *leds;
+        InternalRgbw *leds;
         CRGB *fastLeds;
         bool ledsChanged = false;
         time_t lastLedChange = 0;

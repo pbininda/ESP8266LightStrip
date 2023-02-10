@@ -86,7 +86,7 @@ static void publishDiscovery(bool clear) {
     } else {
         publishOneDiscovery(-1);
         for (uint8_t i = 0; i < NUM_STRIPS; i++) {
-            publishOneDiscovery(i);
+            publishOneDiscovery(static_cast<int8_t>(i));
         }
     }
 }
@@ -152,24 +152,26 @@ void applyPayloadToStrip(uint8_t stripNo, JsonObject &root) {
 void handleMqttMessage(char* p_topic, byte* p_payload, unsigned int p_length) {
     // concatenates the payload into a string
     String payload; // NOLINT(cppcoreguidelines-init-variables)
-    for (uint8_t i = 0; i < p_length; i++) {
+    char *savePtrTopic = nullptr;
+    char *savePtrId = nullptr;
+    for (unsigned int i = 0; i < p_length; i++) {
         payload.concat(static_cast<char>(p_payload[i]));
     }
-    const char * top1 = strtok(p_topic, "/");
+    const char * top1 = strtok_r(p_topic, "/", &savePtrTopic);
     if (top1 == nullptr) {
         return;
     }
-    char * stripId = strtok(nullptr, "/");
+    char * stripId = strtok_r(nullptr, "/", &savePtrTopic);
     if (stripId == nullptr) {
         return;
     }
-    const char * light = strtok(nullptr, "/");
-    const char * cmd = strtok(nullptr, "/");
-    const char * id1  = strtok(stripId, "-");
+    const char * light = strtok_r(nullptr, "/", &savePtrTopic);
+    const char * cmd = strtok_r(nullptr, "/", &savePtrTopic);
+    const char * id1  = strtok_r(stripId, "-", &savePtrId);
     if (id1 == nullptr) {
         return;
     }
-    const char * id2 = strtok(nullptr, "-");
+    const char * id2 = strtok_r(nullptr, "-", &savePtrId);
     int8_t stripNo(-1);
     if (id2 != nullptr) {
         stripNo = strtol(id2, nullptr, DEC);

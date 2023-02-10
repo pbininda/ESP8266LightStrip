@@ -6,7 +6,7 @@
 
 static const uint16_t SW_VERSION_NO = 7;
 
-typedef struct StripSettings {
+struct StripSettings {
     // used in AP Title and HTTP title
     uint16_t NUM_LEDS;
     // lenght of connected LED strip
@@ -15,7 +15,7 @@ typedef struct StripSettings {
     const char * STRIP_NAME;
     uint8_t LED_PIN;
     uint8_t CLOCK_PIN;
-} StripSettings;
+} __attribute__((packed)) __attribute__((aligned(16))); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
 #ifdef BADOBEN
 // IP 192.168.1.58

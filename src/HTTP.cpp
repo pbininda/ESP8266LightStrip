@@ -58,9 +58,9 @@ static String statusBody(const State &state,const Led &led, const Effects &effec
   res += "<p>Dyn Level: " + String(state.dynLevel) + "</p>";
   res += "<p>Dyn Factor: " + String(state.dynFactor) + "</p>";
   const Palette pal = effects.dynGradColor(0);
-  res += "<p>DynR: " + String(pal.r);
-  res += "   DynG: " + String(pal.g);
-  res += "   DynB: " + String(pal.b) + "</p>";
+  res += "<p>DynR: " + String(pal.red);
+  res += "   DynG: " + String(pal.green);
+  res += "   DynB: " + String(pal.blue) + "</p>";
   res += "<p>Led1: " + String(led.getLed(1), HEX) + "</p>";
   return res;
 }
@@ -191,15 +191,15 @@ static void handleApiGet(const Settings &settings, const State &state, const Eff
   jsState["dynFactor"] = state.dynFactor;
 
   const Palette pal = effects.dynGradColor(0);
-  jsState["dynR"] = pal.r;
-  jsState["dynG"] = pal.g;
-  jsState["dynB"] = pal.b;
+  jsState["dynR"] = pal.red;
+  jsState["dynG"] = pal.green;
+  jsState["dynB"] = pal.blue;
 
   for (const Palette pal: settings.palette) {
     const JsonObject col = jsPalette.createNestedObject();
-    col["r"] = pal.r;
-    col["g"] = pal.g;
-    col["b"] = pal.b;
+    col["r"] = pal.red;
+    col["g"] = pal.green;
+    col["b"] = pal.blue;
   }
 
 
@@ -216,7 +216,7 @@ static void extractSettings(Settings &settings, const JsonObject &jsSettings, co
       settings.on = static_cast<uint8_t>(isOn);
     }
     if (jsSettings.containsKey("bri")) {
-      settings.bri = jsSettings["bri"];
+      settings.bri = jsSettings["bri"]; // NOLINT, false positive
       settings.bri %= NUM_IN_BYTE + 1;
     }
     if (jsSettings.containsKey("bri2")) {
@@ -284,11 +284,11 @@ static void handleLedsGet(const Led &led) {
   JsonArray jsLeds = jsRoot.createNestedArray("leds");
   for (uint16_t i = 0; i < led.stripSettings.NUM_LEDS; i ++) {
     const JsonObject col = jsLeds.createNestedObject();
-    const INTERNAL_RGBW ledCol = led.getLedc(i);
-    col["r"] = ledCol.r;
-    col["g"] = ledCol.g;
-    col["b"] = ledCol.b;
-    col["w"] = ledCol.w;
+    const InternalRgbw ledCol = led.getLedc(i);
+    col["r"] = ledCol.red;
+    col["g"] = ledCol.green;
+    col["b"] = ledCol.blue;
+    col["w"] = ledCol.white;
   }
   String jsonString; // NOLINT(cppcoreguidelines-init-variables)
   serializeJson(jsonDocument, jsonString);

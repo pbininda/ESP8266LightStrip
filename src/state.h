@@ -8,9 +8,9 @@ const uint8_t NUM_PALETTE = 24;
 
 class Palette {
   public:
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
 };
 
 class Settings {
@@ -44,15 +44,11 @@ class State {
     uint16_t dynLevel;
     uint32_t dynFactor;
     uint16_t tick;
+
+    static void initState(const Settings &settings, State &state);
+    static void updateState(const Settings &settings, State &state);
 };
 
 extern State strip_states[NUM_STRIPS];
 
-extern void initState(const Settings &settings, State &state);
-extern void updateState(const Settings &settings, State &state);
-
-#define DYNRANGE ((long) (256L * 128L))
-
-// #define DYNR(state, settings, ledIdx) (state.dynFactor * settings.palette[settings.colidx].r / 256)
-// #define DYNG(state, settings, ledIdx) (state.dynFactor * settings.palette[settings.colidx].g / 256)
-// #define DYNB(state, settings, ledIdx) (state.dynFactor * settings.palette[settings.colidx].b / 256)
+static const unsigned long DYNRANGE = 256L * 128L;

@@ -4,11 +4,11 @@
 #include "persistence.h"
 #include "values.h"
 
-struct header {
+struct header { // NOLINT(altera-struct-pack-align)
   uint16_t magic;
   uint16_t version;
   uint16_t num_strips;
-};
+}; // NOLINT(altera-struct-pack-align)
 
 static const uint16_t MAGIC_NUMBER = 0x1ED5;
 
@@ -17,18 +17,19 @@ static struct header expectedHeader = {MAGIC_NUMBER, SW_VERSION_NO, NUM_STRIPS};
 static void printSettings() {
   uint8_t count = 0;
   for (const Settings &settings: strip_settings) {
-    Serial.print("Settings for strip "); Serial.println(count++);
+    Serial.print("Settings for strip "); Serial.println(count);
     Serial.print("on: "); Serial.print(settings.on);
     Serial.print("    mode: "); Serial.println(settings.mode);
-    Serial.print("r: "); Serial.print(settings.palette[settings.colidx].r);
-    Serial.print("    g: "); Serial.print(settings.palette[settings.colidx].g);
-    Serial.print("    b: "); Serial.println(settings.palette[settings.colidx].b);
+    Serial.print("r: "); Serial.print(settings.palette[settings.colidx].red);
+    Serial.print("    g: "); Serial.print(settings.palette[settings.colidx].green);
+    Serial.print("    b: "); Serial.println(settings.palette[settings.colidx].blue);
     Serial.print("bri: "); Serial.println(settings.bri);
     Serial.print("bri2: "); Serial.println(settings.bri2);
     Serial.print("rise: "); Serial.print(settings.rise);
     Serial.print("    fall: "); Serial.println(settings.fall);
     Serial.print("cylcle: "); Serial.println(settings.cycle);
     Serial.print("onoffmode: "); Serial.println(settings.onoffmode);
+    count = count + 1;
   }
 }
 

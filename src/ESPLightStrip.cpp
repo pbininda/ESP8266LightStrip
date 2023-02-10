@@ -25,7 +25,7 @@ static void initData() {
 
 static void initState() {
   for (uint8_t i = 0; i < NUM_STRIPS; i++) {
-    initState(strip_settings[i], strip_states[i]);
+    State::initState(strip_settings[i], strip_states[i]);
   }
 }
 
@@ -93,7 +93,7 @@ void loop() {
   for (uint8_t i = 0; i < NUM_STRIPS; i++) {
     const Settings &settings = strip_settings[i];
     State &state = strip_states[i];
-    updateState(settings, state);
+    State::updateState(settings, state);
     setLeds();
     if (leds[i]->getLastLedChangeDelta() <= MinChangeDelta) {
       change = true;
