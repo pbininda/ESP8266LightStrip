@@ -5,7 +5,7 @@
 
 static bool otaSetupDone = false;
 
-void initOta() {
+void initOta() { // cppcheck-suppress unusedFunction
   String hostname("ESP32-OTA-"); // NOLINT(cppcoreguidelines-init-variables)
   hostname += String(ESP.getEfuseMac(), HEX);
   WiFi.hostname(hostname);
@@ -45,7 +45,7 @@ void initOta() {
   Serial.println("ready for OTA");
 }
 
-void handleOta() {
+void handleOta() { // cppcheck-suppress unusedFunction
   if (otaSetupDone) {
     ArduinoOTA.handle();
   }

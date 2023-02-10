@@ -12,13 +12,13 @@ static WiFiManager wifiManager;
 
 String wiFiMac;
 
-void startWiFiPortal() {
+void startWiFiPortal() { // cppcheck-suppress unusedFunction
   Serial.print("Resetting WIFI");
   WiFi.disconnect(false, true);
   ESP.restart();
 }
 
-void initWiFi() {
+void initWiFi() { // cppcheck-suppress unusedFunction
   // Connect to WiFi network
   static uint8_t MAC_STA[] = {0,0,0,0,0,0};
   Serial.print("MAC[STA]");
@@ -34,7 +34,7 @@ void initWiFi() {
   // WiFi.setSleepMode(WIFI_NONE_SLEEP);
 }
 
-void handleWiFi(Led **leds, Effects **effects) {
+void handleWiFi(Led **leds, Effects **effects) { // cppcheck-suppress unusedFunction
   if (!wiFiSetupDone) {
     if (WiFi.status() == WL_CONNECTED) {
       Serial.println("");
@@ -50,7 +50,7 @@ void handleWiFi(Led **leds, Effects **effects) {
   }
 }
 
-void wiFiGoToSleep(uint32_t delayMs) {
+void wiFiGoToSleep(uint32_t delayMs) { // cppcheck-suppress unusedFunction
 //    wifi_set_sleep_type(LIGHT_SLEEP_T);
     delay(delayMs);
 }

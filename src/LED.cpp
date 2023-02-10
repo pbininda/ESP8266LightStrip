@@ -18,6 +18,11 @@ Led::Led(uint8_t stripNo, const State &state) :
 {
 }
 
+Led::~Led() {
+  delete[] leds;
+  delete[] fastLeds;
+}
+
 void Led::setLed(uint16_t n, const InternalRgbw &rgbwColor) {
   setLedc(n, ledColor(rgbwColor));
 }
@@ -26,11 +31,11 @@ uint32_t Led::getLed(uint16_t n) const {
     return ledColor(leds[n]);
 }
 
-InternalRgbw Led::getLedc(uint16_t n) const {
+InternalRgbw Led::getLedc(uint16_t n) const { // cppcheck-suppress unusedFunction
   return leds[n];
 }
 
-time_t Led::getLastLedChangeDelta() const {
+time_t Led::getLastLedChangeDelta() const { // cppcheck-suppress unusedFunction
   return state.now - lastLedChange;
 }
 

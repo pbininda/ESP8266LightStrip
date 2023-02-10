@@ -195,11 +195,11 @@ static void handleApiGet(const Settings &settings, const State &state, const Eff
   jsState["dynG"] = pal.green;
   jsState["dynB"] = pal.blue;
 
-  for (const Palette pal: settings.palette) {
+  for (const Palette palentry: settings.palette) {
     const JsonObject col = jsPalette.createNestedObject();
-    col["r"] = pal.red;
-    col["g"] = pal.green;
-    col["b"] = pal.blue;
+    col["r"] = palentry.red;
+    col["g"] = palentry.green;
+    col["b"] = palentry.blue;
   }
 
 
@@ -256,7 +256,7 @@ static void extractSettings(Settings &settings, const JsonObject &jsSettings, co
 
 static void handleApiPost(Settings &settings, State &state, const StripSettings &stripSettings, bool sendResult) {
   Serial.println(String("StackSize at start of post: ") + uxTaskGetStackHighWaterMark(NULL));
-  const bool wasOn = settings.on >= 0;
+  const bool wasOn = settings.on != 0;
   DynamicJsonDocument jsonDocument(2536);
   String jsonString(server.arg("plain")); // NOLINT(cppcoreguidelines-init-variables)
   Serial.print("POST: ");
@@ -321,7 +321,7 @@ static void handleSetup() {
 }
 
 
-void initServer(Settings *settings, State *state, Led **led, Effects **effects) {
+void initServer(Settings *settings, State *state, Led **led, Effects **effects) { // cppcheck-suppress unusedFunction
   // Start the server
   server.on("/", HTTP_GET, [=]() { handleIndex(settings[0], state[0], *led[0], *effects[0], STRIP_SETTINGS[0], -1); });
   server.on("/", HTTP_POST, [=]() { 
@@ -357,7 +357,7 @@ void initServer(Settings *settings, State *state, Led **led, Effects **effects) 
   Serial.println(WiFi.localIP());
 }
 
-void handleServer() {
+void handleServer() { // cppcheck-suppress unusedFunction
   if (serverSetupDone) {
       server.handleClient();
   }

@@ -5,6 +5,7 @@
 #include <ArduinoJson.h>
 #include "WiFiServe.h"
 #include "state.h"
+#include "mqtt.h"
 
 WiFiClient wifiClient;
 PubSubClient pubSubClient(wifiClient);
@@ -52,7 +53,7 @@ static void publishOneDiscovery(int8_t stripNo) {
     const JsonObject root = jsonDocument.to<JsonObject>();
     if (stripNo < 0) {
         root["name"] = String(SYSTEM_NAME) + " Global";
-    } else {
+    } else if (stripNo < NUM_STRIPS) {
         root["name"] = STRIP_SETTINGS[stripNo].STRIP_NAME;
     }
     root["unique_id"] = "entity-" + wiFiMac + (stripNo < 0 ? "" : (String("-") + String(stripNo)));
@@ -161,13 +162,13 @@ void handleMqttMessage(char* p_topic, byte* p_payload, unsigned int p_length) {
     if (top1 == nullptr) {
         return;
     }
-    char * stripId = strtok_r(nullptr, "/", &savePtrTopic);
-    if (stripId == nullptr) {
+    char * stripIdStr = strtok_r(nullptr, "/", &savePtrTopic);
+    if (stripIdStr == nullptr) {
         return;
     }
     const char * light = strtok_r(nullptr, "/", &savePtrTopic);
     const char * cmd = strtok_r(nullptr, "/", &savePtrTopic);
-    const char * id1  = strtok_r(stripId, "-", &savePtrId);
+    const char * id1  = strtok_r(stripIdStr, "-", &savePtrId);
     if (id1 == nullptr) {
         return;
     }
@@ -223,7 +224,7 @@ static void reconnect() {
 static const uint32_t MQTT_BUFFER_SIZE = 2048;
 static const uint32_t MQTT_SERVER_PORT = 1883;
 
-void initMqtt() {
+void initMqtt() { // cppcheck-suppress unusedFunction
   Serial.print("Resetting WIFI");
   pubSubClient.setBufferSize(MQTT_BUFFER_SIZE);
   pubSubClient.setServer(mqtt_server, MQTT_SERVER_PORT);
@@ -233,7 +234,7 @@ void initMqtt() {
 static const uint32_t CONNECT_INTERVAL_MS = 5000;
 static const uint32_t PUBLISH_INTERVAL_MS = 1000;
 
-void handleMqtt() {
+void handleMqtt() { // cppcheck-suppress unusedFunction
     static uint16_t count = 0;
     uint32_t now = millis();
 

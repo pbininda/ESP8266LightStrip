@@ -74,7 +74,7 @@ static void defaultSettings() {
 
 static const int EEPROM_SPACE_RESERVED = 512;
 
-void readSettings() {
+void readSettings() { // cppcheck-suppress unusedFunction
   Serial.println(String("EEPROM space ") + String(sizeof(header) + sizeof(strip_settings)) + String(" / ") + String(EEPROM_SPACE_RESERVED));
   EEPROM.begin(EEPROM_SPACE_RESERVED);
   struct header header; // NOLINT

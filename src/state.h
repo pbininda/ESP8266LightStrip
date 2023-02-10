@@ -36,6 +36,8 @@ class State {
   public:
     constexpr State(): now(0), riseStart(0), riseStop(0), fallStart(0), fallStop(0), dynLevel(0), dynFactor(0), tick(0) {};
     State(const State&) = delete;
+    State & operator=(const State&) = delete;
+
     time_t now;
     time_t riseStart;
     time_t riseStop;

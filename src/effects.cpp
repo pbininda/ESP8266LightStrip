@@ -121,7 +121,7 @@ void Effects::setLedsZylon() {
 Palette Effects::dynGradColor(uint16_t ledIdx) const {
   if (settings.ngradient <= 1) {
     return {
-      red: static_cast<uint8_t>(state.dynFactor * settings.palette[settings.colidx].red / NUM_IN_BYTE),
+      red: static_cast<uint8_t>(state.dynFactor * settings.palette[settings.colidx].red / NUM_IN_BYTE), // cppcheck-suppress internalAstError
       green: static_cast<uint8_t>(state.dynFactor * settings.palette[settings.colidx].green / NUM_IN_BYTE),
       blue: static_cast<uint8_t>(state.dynFactor * settings.palette[settings.colidx].blue / NUM_IN_BYTE)
     };

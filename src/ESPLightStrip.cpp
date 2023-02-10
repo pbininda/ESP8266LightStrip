@@ -84,7 +84,7 @@ static void setLeds() {
 static const uint16_t MinChangeDelta = 1000;
 static const uint16_t SleepDelay = 200;
 
-void loop() {
+ void loop() { // cppcheck-suppress unusedFunction
   handleWiFi(leds, effects);
   handleServer();
   handleOta();
@@ -109,7 +109,7 @@ void loop() {
   }
 }
 
-void setup() {
+void setup() { // cppcheck-suppress unusedFunction
   Serial.begin(115200);
   Serial.println();
   Serial.println();

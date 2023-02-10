@@ -17,7 +17,10 @@ struct InternalRgbw {
 class Led {
     public:
         Led(uint8_t stripNo, const State &state);
-
+        ~Led();
+        Led(const Led&) = delete;
+        Led & operator=(const Led&) = delete;
+    
         static uint32_t ledColor(const InternalRgbw &rgbwColor);
         void setLed(uint16_t n, const InternalRgbw &rgbwColor);
         void setLedc(uint16_t n, uint32_t c);
@@ -33,7 +36,7 @@ class Led {
             pinMode(CLOCK_PIN, OUTPUT);
             digitalWrite(LED_PIN, HIGH);
             digitalWrite(CLOCK_PIN, HIGH);
-            FastLED.addLeds<APA102, LED_PIN, CLOCK_PIN, BGR, DATA_RATE_MHZ(1)>((CRGB *)fastLeds, stripSettings.NUM_LEDS + 1);
+            FastLED.addLeds<APA102, LED_PIN, CLOCK_PIN, BGR, DATA_RATE_MHZ(1)>(static_cast<CRGB *>(fastLeds), stripSettings.NUM_LEDS + 1);
             sendLeds(); // Initialize all pixels to 'off'
         }
         const StripSettings &stripSettings;

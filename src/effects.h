@@ -13,6 +13,8 @@ class Effects {
             led(led)
         {
         }
+        Effects(const Effects&) = delete;
+        Effects & operator=(const Effects&) = delete;
 
         void setLedsFixed();
         void setLedsZylon();

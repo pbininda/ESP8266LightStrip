@@ -6,7 +6,7 @@
 State strip_states[NUM_STRIPS];
 Settings strip_settings[NUM_STRIPS];
 
-void State::updateState(const Settings &settings, State &state) {
+void State::updateState(const Settings &settings, State &state) { // cppcheck-suppress unusedFunction
   state.now = millis();
   if (settings.on != 0) {
     if (state.now >= state.riseStart && state.now < state.riseStop) {
@@ -27,7 +27,7 @@ void State::updateState(const Settings &settings, State &state) {
   state.dynFactor = settings.bri;
 }
 
-void State::initState(const Settings &settings, State &state) {
+void State::initState(const Settings &settings, State &state) { // cppcheck-suppress unusedFunction
   state.dynLevel = 0;
   state.now = millis();
   state.riseStart = state.now;

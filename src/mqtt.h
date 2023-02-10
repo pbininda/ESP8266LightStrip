@@ -1,4 +1,4 @@
 #pragma once
 
-void initMqtt();
-void handleMqtt();
+extern void initMqtt();
+extern void handleMqtt();
