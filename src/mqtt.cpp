@@ -63,6 +63,8 @@ static void publishOneDiscovery(int8_t stripNo) {
     root["state_topic"] = stateTopic(stripNo);
     root["command_topic"] = commandTopic(stripNo);
     root["brightness"] = true;
+    root["color_mode"] =  true;
+    root["supported_color_modes"] = "rgb";
     root["effect"] = true;
     JsonArray effects = root.createNestedArray("effect_list");
     effects.add("fixed");
@@ -75,7 +77,6 @@ static void publishOneDiscovery(int8_t stripNo) {
     device["model"] = "ESP Light Strip";
     device["manufacturer"] = "PBininda";
     device["sw_version"] = String(FIRMWARE_FLAVOUR) + " " + FIRMWARE_VERSION;
-    // root["rgb"] = true;
     publish(discoveryTopic(stripNo), jsonDocument);
 }
 
@@ -99,9 +100,15 @@ static String getJsonState(int8_t stripNo) {
     if (stripNo < 0) {
         stripNo = 0;
     }
-    root["state"] = strip_settings[stripNo].on != 0 ? "ON" : "OFF";
-    root["brightness"] = strip_settings[stripNo].bri;
-    root["effect"] = strip_settings[stripNo].mode == 2 ? "wheel" : strip_settings[stripNo].mode == 1 ? "zylon" : "fixed";
+    Settings &settings = strip_settings[stripNo];
+    root["state"] = settings.on != 0 ? "ON" : "OFF";
+    root["brightness"] = settings.bri;
+    root["effect"] = settings.mode == 2 ? "wheel" : settings.mode == 1 ? "zylon" : "fixed";
+    root["color_mode"] = "rgb";
+    JsonObject color = root.createNestedObject("color");
+    color["r"] = settings.palette[settings.colidx].red;
+    color["g"] = settings.palette[settings.colidx].green;
+    color["b"] = settings.palette[settings.colidx].blue;
     String state;; // NOLINT(cppcoreguidelines-init-variables)
     serializeJson(jsonDocument, state);
     return state;
@@ -125,27 +132,34 @@ static void publishAvailability() {
 }
 
 void applyPayloadToStrip(uint8_t stripNo, JsonObject &root) {
+    Settings &settings = strip_settings[stripNo];
     if (root.containsKey("state")) {
         const String state = root["state"]; // NOLINT(cppcoreguidelines-init-variables)
         if (state == "ON") {
-            strip_settings[stripNo].on = 1;
+            settings.on = 1;
         } else {
-            strip_settings[stripNo].on = 0;
+            settings.on = 0;
         }
     }
     if (root.containsKey("brightness")) {
         const uint8_t brightness = root["brightness"];
-        strip_settings[stripNo].bri = brightness;
+        settings.bri = brightness;
     }
     if (root.containsKey("effect")) {
         const String effect = root["effect"]; // NOLINT(cppcoreguidelines-init-variables)
         if (effect == "fixed") {
-            strip_settings[stripNo].mode = 0;
+            settings.mode = 0;
         } else if (effect == "zylon") {
-            strip_settings[stripNo].mode = 1;
+            settings.mode = 1;
         } else if (effect == "wheel") {
-            strip_settings[stripNo].mode = 2;
+            settings.mode = 2;
         }
+    }
+    if (root.containsKey("color")) {
+        JsonObject jsColor = root["color"];
+        settings.palette[settings.colidx].red = jsColor["r"];
+        settings.palette[settings.colidx].green = jsColor["g"];
+        settings.palette[settings.colidx].blue = jsColor["b"];
     }
 }
 
