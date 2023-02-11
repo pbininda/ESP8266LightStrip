@@ -64,3 +64,5 @@ class State {
 extern State strip_states[NUM_STRIPS];
 
 static const unsigned long DYNRANGE = 256L * 128L;
+
+extern void processSettings(const Settings &settings, State &state, bool wasOn);

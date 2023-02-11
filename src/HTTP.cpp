@@ -158,21 +158,6 @@ static bool extractArgStr(const char *arg, char *target, uint16_t len) {
   return false;
 }
 
-static void processSettings(const Settings &settings, State &state, bool wasOn) {
-  time_t now = millis();
-  if ((settings.on != 0) != wasOn) {
-    if (settings.on != 0) {
-      state.riseStart = now;
-      state.riseStop = now + settings.rise;
-    }
-    else {
-      state.fallStart = now;
-      state.fallStop = now + settings.fall;
-    }
-  }
-  writeSettings();
-}
-
 static void extractArgs(Settings &settings, State &state) {
   const bool wasOn = settings.on != 0;
   extractArg8("on", settings.on);

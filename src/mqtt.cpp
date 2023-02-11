@@ -133,6 +133,8 @@ static void publishAvailability() {
 
 void applyPayloadToStrip(uint8_t stripNo, JsonObject &root) {
     Settings &settings = strip_settings[stripNo];
+    State &state = strip_states[stripNo];
+    const bool wasOn = settings.on != 0;
     if (root.containsKey("state")) {
         const String state = root["state"]; // NOLINT(cppcoreguidelines-init-variables)
         if (state == "ON") {
@@ -161,6 +163,7 @@ void applyPayloadToStrip(uint8_t stripNo, JsonObject &root) {
         settings.palette[settings.colidx].green = jsColor["g"];
         settings.palette[settings.colidx].blue = jsColor["b"];
     }
+    processSettings(settings, state, wasOn);
 }
 
 void handleMqttMessage(char* p_topic, byte* p_payload, unsigned int p_length) {

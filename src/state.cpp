@@ -2,6 +2,7 @@
 #include <time.h>
 #include <Arduino.h>
 #include "state.h"
+#include "persistence.h"
 
 State strip_states[NUM_STRIPS];
 Settings strip_settings[NUM_STRIPS];
@@ -33,4 +34,20 @@ void State::initState(const Settings &settings, State &state) { // cppcheck-supp
   state.riseStart = state.now;
   state.riseStop = state.now + settings.rise;
 }
+
+void processSettings(const Settings &settings, State &state, bool wasOn) {
+  time_t now = millis();
+  if ((settings.on != 0) != wasOn) {
+    if (settings.on != 0) {
+      state.riseStart = now;
+      state.riseStop = now + settings.rise;
+    }
+    else {
+      state.fallStart = now;
+      state.fallStop = now + settings.fall;
+    }
+  }
+  writeSettings();
+}
+
 
