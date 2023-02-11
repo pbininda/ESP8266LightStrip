@@ -22,8 +22,8 @@ static String stateTopic(int8_t stripNo) {
     return  "esp/" + stripId(stripNo) + "/light/state";
 }
 
-static String availabilityTopic(int8_t stripNo) {
-    return  "esp/" + stripId(stripNo) + "/light/availability";
+static String availabilityTopic() {
+    return  "esp/" + stripId(-1) + "/light/availability";
 }
 
 static String commandTopic(int8_t stripNo) {
@@ -59,7 +59,7 @@ static void publishOneDiscovery(int8_t stripNo) {
     }
     root["unique_id"] = "entity-" + wiFiMac + (stripNo < 0 ? "" : (String("-") + String(stripNo)));
     root["schema"] = "json";
-    root["availability_topic"] = availabilityTopic(stripNo);
+    root["availability_topic"] = availabilityTopic();
     root["state_topic"] = stateTopic(stripNo);
     root["command_topic"] = commandTopic(stripNo);
     root["brightness"] = true;
@@ -121,9 +121,7 @@ static void publishState() {
 }
 
 static void publishAvailability() {
-    for (int8_t i = -1; i < NUM_STRIPS; i++) {
-     publish(availabilityTopic(i), "online");
-   }
+    publish(availabilityTopic(), "online");
 }
 
 void applyPayloadToStrip(uint8_t stripNo, JsonObject &root) {
@@ -209,9 +207,12 @@ static void reconnect() {
     // Attempt to connect
     // If you do not want to use a username and password, change next line to
     // if (client.connect("ESP8266Client")) {
-    if (pubSubClient.connect("ESP32 cleint", mqtt_user, mqtt_password)) {
+    String clientId = "ESP32 client ";
+    clientId += SYSTEM_NAME;
+    if (pubSubClient.connect(clientId.c_str(), mqtt_user, mqtt_password, availabilityTopic().c_str(), 0, true, "offline")) {
       Serial.println("connected");
       publishDiscovery(false);
+      publishAvailability();
       for (int8_t i = -1; i < NUM_STRIPS; i++) {
           subscribe(commandTopic(i));
       }
@@ -230,10 +231,11 @@ void initMqtt() { // cppcheck-suppress unusedFunction
   pubSubClient.setBufferSize(MQTT_BUFFER_SIZE);
   pubSubClient.setServer(mqtt_server, MQTT_SERVER_PORT);
   pubSubClient.setCallback(handleMqttMessage);
+  reconnect();
 }
 
 static const uint32_t CONNECT_INTERVAL_MS = 5000;
-static const uint32_t PUBLISH_INTERVAL_MS = 1000;
+static const uint32_t PUBLISH_INTERVAL_MS = 10000;
 
 void handleMqtt() { // cppcheck-suppress unusedFunction
     static uint16_t count = 0;
