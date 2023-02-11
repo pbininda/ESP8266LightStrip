@@ -75,7 +75,10 @@ static String numInput(const char *label, const char *name, long min, long max, 
 
 static String formBody(const Settings &settings, int8_t strip) {
   String strp = (strip < 0 ? "" : String(strip)); // NOLINT(cppcoreguidelines-init-variables)
-  String res(R"(<form action="/{{STRIP}}" method="post">)"); // NOLINT(cppcoreguidelines-init-variables)
+  String spa = (strip < 0 ? "spa" : String("spa/") + String(strip)); // NOLINT(cppcoreguidelines-init-variables)
+  String res(""); // NOLINT(cppcoreguidelines-init-variables)
+  res += String(R"(<h1>)") + (strip < 0 ? String("Global ") + SYSTEM_NAME : String(STRIP_SETTINGS[strip].STRIP_NAME)) + R"(</h1>)";
+  res += R"(<form action="/{{STRIP}}" method="post">)";
   res += String("<p>") + numInput("On", "on", 0, 1, settings.on) + numInput("Mode", "mode", 0, NUM_MODES - 1, settings.mode) + numInput("OnOff Mode", "onoffmode", 0, ONOFFMODE_LAST - 1, settings.onoffmode) + "</p>";
   res +=         "<p>" + numInput("Color Index", "colidx", 0, NUM_PALETTE - 1, settings.colidx) + "</p>";
   res +=         "<p>" + numInput("Gradient Length", "ngradient", 0, NUM_PALETTE - 1, settings.ngradient) + "</p>";
@@ -86,11 +89,25 @@ static String formBody(const Settings &settings, int8_t strip) {
   res +=                 numInput("Fall", "fall", 0, 10000, settings.fall) + "</p>";
   res +=         "<button type=\"submit\">Set</button>";
   res +=         "</form>\r\n";
-  res += R"(<p><a href="/{{STRIP}}">Reload</a></p>\r\n)";
+  res += R"(<p><a href="/{{STRIP}}">Reload</a></p>)";
+  if (strip < 0) {
+    for (uint8_t i = 0; i < NUM_STRIPS; i++) {
+      res += R"(<p><a href="/)" + String(i) + R"(">)" +  STRIP_SETTINGS[i].STRIP_NAME + R"(</a></p>)";
+    }
+  } else {
+    res += R"(<p><a href="/">Global )" +  String(SYSTEM_NAME) + R"(</a></p>)";
+  }
+  res += R"(<p><a href="/{{SPA}}">SPA</a></p>)";
+  if (strip < 0) {
+    for (uint8_t i = 0; i < NUM_STRIPS; i++) {
+      res += R"(<p><a href="/spa/)" + String(i) + R"(">)" +  STRIP_SETTINGS[i].STRIP_NAME + R"( SPA</a></p>)";
+    }
+  }
   res += R"(<form action="/setup" method="post">)";
   res += R"(<button type="submit">Reset WiFi</button>)";
   res += "</form>\r\n";
   res.replace("{{STRIP}}", strp);
+  res.replace("{{SPA}}", spa);
   return res;
 }
 
@@ -338,10 +355,12 @@ static String index() {
 
 static void handleSpa(Settings &settings, State &state, const StripSettings &stripSettings, int8_t strip) {
   String strp = strip < 0 ? "" : String("/") + String(strip); // NOLINT(cppcoreguidelines-init-variables)
+  String settingsLink = (strip < 0 ? "/" : String("/") + String(strip)); // NOLINT(cppcoreguidelines-init-variables)
   extractArgs(settings, state);
   String indexData = index(); // NOLINT(cppcoreguidelines-init-variables)
   indexData.replace("{{SYSTEM_NAME}}", stripSettings.STRIP_NAME);
   indexData.replace("{{STRIP}}", strp);
+  indexData.replace("{{SETTINGS}}", settingsLink);
   sendResult(indexData);
 }
 
