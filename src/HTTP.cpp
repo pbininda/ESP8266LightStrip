@@ -292,10 +292,10 @@ static void extractSettings(Settings &settings, const JsonObject &jsSettings, co
       settings.rise = jsSettings["rise"];
     }
     if(jsSettings.containsKey("fall")) {
-      settings.rise = jsSettings["fall"];
+      settings.fall = jsSettings["fall"];
     }
     if(jsSettings.containsKey("cycle")) {
-      settings.rise = jsSettings["cycle"];
+      settings.cycle = jsSettings["cycle"];
     }
     if (jsSettings.containsKey("setpal")) {
       JsonObject jsSetPal = jsSettings["setpal"];
