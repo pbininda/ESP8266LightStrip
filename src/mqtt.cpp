@@ -223,12 +223,19 @@ static void reconnect() {
     // if (client.connect("ESP8266Client")) {
     String clientId = "ESP32 client ";
     clientId += SYSTEM_NAME;
-    if (pubSubClient.connect(clientId.c_str(), mqtt_user, mqtt_password, availabilityTopic().c_str(), 0, true, "offline")) {
+    if (pubSubClient.connect(clientId.c_str(), 
+        strip_settings[0].mqttUser,
+        strip_settings[0].mqttPassword,
+        availabilityTopic().c_str(), 0, true, "offline")) {
       Serial.println("connected");
-      publishDiscovery(false);
-      publishAvailability();
-      for (int8_t i = -1; i < NUM_STRIPS; i++) {
-          subscribe(commandTopic(i));
+      if (strip_settings[0].mqttEnabled != 0) {
+        publishDiscovery(false);
+        publishAvailability();
+        for (int8_t i = -1; i < NUM_STRIPS; i++) {
+            subscribe(commandTopic(i));
+        }
+      } else {
+        publishDiscovery(true);
       }
     } else {
       Serial.print("failed, rc=");
@@ -240,21 +247,43 @@ static void reconnect() {
 static const uint32_t MQTT_BUFFER_SIZE = 2048;
 static const uint32_t MQTT_SERVER_PORT = 1883;
 
+static bool mqttSetupDone = false;
+
+static void initialConnect() {
+  pubSubClient.setServer(strip_settings[0].mqttServer, MQTT_SERVER_PORT);
+  pubSubClient.setCallback(handleMqttMessage);
+  reconnect();
+  mqttSetupDone = true;
+}
+
+static boolean hasMqttSettings() {
+    Settings &settings = strip_settings[0];
+    return strlen(settings.mqttServer) > 0 &&
+        strlen(settings.mqttUser) > 0 &&
+        strlen(settings.mqttPassword) > 0;
+}
+
 void initMqtt() { // cppcheck-suppress unusedFunction
   Serial.print("Resetting WIFI");
   pubSubClient.setBufferSize(MQTT_BUFFER_SIZE);
-  pubSubClient.setServer(mqtt_server, MQTT_SERVER_PORT);
-  pubSubClient.setCallback(handleMqttMessage);
-  reconnect();
 }
 
 static const uint32_t CONNECT_INTERVAL_MS = 5000;
 static const uint32_t PUBLISH_INTERVAL_MS = 10000;
 
 void handleMqtt() { // cppcheck-suppress unusedFunction
-    static uint16_t count = 0;
     uint32_t now = millis();
-
+    if (!mqttSetupDone) {
+        if (hasMqttSettings()) {
+            initialConnect();
+        }
+        else {
+            return;
+        }
+    }
+    if (strip_settings[0].mqttEnabled == 0) {
+        return;
+    }
     if (!pubSubClient.connected()) {
         static uint32_t lastConnectAttempt = 0;
         if (now - lastConnectAttempt > CONNECT_INTERVAL_MS) {
@@ -262,15 +291,15 @@ void handleMqtt() { // cppcheck-suppress unusedFunction
             lastConnectAttempt = millis();
         }
     } else {
-        static uint32_t lastSent = 0;
-        pubSubClient.loop();
-        publishState();
-        if (now - lastSent > PUBLISH_INTERVAL_MS) {
-            publishAvailability();
-            // pubSubClient.publish("mqtttest/count", String(count).c_str());
-            Serial.print("#");
-            lastSent = millis();
+        if (strip_settings[0].mqttEnabled != 0) {
+            static uint32_t lastSent = 0;
+            pubSubClient.loop();
+            publishState();
+            if (now - lastSent > PUBLISH_INTERVAL_MS) {
+                publishAvailability();
+                Serial.print("#");
+                lastSent = millis();
+            }
         }
     }
-    count++;
 }

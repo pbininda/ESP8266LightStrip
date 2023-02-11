@@ -15,7 +15,13 @@ class Palette {
 
 class Settings {
   public:
-    constexpr Settings(): on(0), mode(0), colidx(0), bri(0), rise(0), fall(0), cycle(0), bri2(0), onoffmode(0), ngradient(0), palette({}) {};
+    constexpr Settings():
+      on(0), mode(0), colidx(0), bri(0), rise(0), fall(0),
+      cycle(0), bri2(0), onoffmode(0), ngradient(0),
+      palette({}),
+      mqttEnabled(0),
+      mqttServer(""), mqttPassword(""), mqttUser("") {
+      };
     Settings(const Settings &) = delete;
     uint8_t on;
     uint8_t mode;
@@ -28,6 +34,10 @@ class Settings {
     uint8_t onoffmode;
     uint8_t ngradient;
     Palette palette[NUM_PALETTE];
+    uint8_t mqttEnabled;
+    char mqttServer[32];
+    char mqttPassword[32];
+    char mqttUser[16];
 };
 
 extern Settings strip_settings[NUM_STRIPS];

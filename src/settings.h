@@ -2,8 +2,6 @@
 
 #include <stdint.h>
 
-#include "secrets.h"
-
 struct StripSettings {
     // used in AP Title and HTTP title
     uint16_t NUM_LEDS;

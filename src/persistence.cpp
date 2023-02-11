@@ -11,7 +11,8 @@ struct header { // NOLINT(altera-struct-pack-align)
 }; // NOLINT(altera-struct-pack-align)
 
 static const uint16_t MAGIC_NUMBER = 0x1ED5;
-static const uint16_t CONFIG_VERSION = 7;
+const uint16_t CONFIG_VERSION = 8;
+
 
 static struct header expectedHeader = {MAGIC_NUMBER, CONFIG_VERSION, NUM_STRIPS};
 
@@ -30,6 +31,10 @@ static void printSettings() {
     Serial.print("    fall: "); Serial.println(settings.fall);
     Serial.print("cylcle: "); Serial.println(settings.cycle);
     Serial.print("onoffmode: "); Serial.println(settings.onoffmode);
+    Serial.print("mqttEnabled: "); Serial.println(settings.mqttEnabled);
+    Serial.print("mqttServer: "); Serial.println(settings.mqttServer);
+    Serial.print("mqttUser: "); Serial.println(settings.mqttUser);
+    Serial.print("mqttPassword: "); Serial.println(settings.mqttPassword);
     count = count + 1;
   }
 }
@@ -70,6 +75,9 @@ static void defaultSettings() {
     settings.palette[21] = {255, 80, 30}; // NOLINT
     settings.palette[22] = {255, 60, 20}; // NOLINT
     settings.palette[23] = {255, 0, 0}; // NOLINT
+    settings.mqttServer[0] = 0;
+    settings.mqttUser[0] = 0;
+    settings.mqttUser[0] = 0;
   }
 }
 

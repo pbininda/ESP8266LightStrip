@@ -52,7 +52,6 @@ static void sendJsonResult(const String resp) {
 
 static String statusBody(const State &state,const Led &led, const Effects &effects) {
   String res(""); // NOLINT(cppcoreguidelines-init-variables)
-  res += String("<p>Version ") + FIRMWARE_FLAVOUR + " " + FIRMWARE_VERSION + "</p>";
   if (state.riseStart != 0 || state.riseStop != 0) {
     res += "<p>Rise time: " + String(state.riseStart - state.now) + " &rArr; " + String(state.riseStop - state.now) + "</p>";
   }
@@ -73,11 +72,16 @@ static String numInput(const char *label, const char *name, long min, long max, 
   return String("<label>") + label + R"(:</label><input name=")" + name + R"(" type="number" min=")" + String(min) + R"( " max=")" + String(max) + R"(" value=")" + String(value) + R"("></p>)";
 }
 
+static String strInput(const char *label, const char *name, long len, const char * value) {
+  return String("<label>") + label + R"(:</label><input name=")" + name + R"(" type="text" maxlength=")" + String(len - 1) + R"(" value=")" + String(value) + R"("></p>)";
+}
+
 static String formBody(const Settings &settings, int8_t strip) {
   String strp = (strip < 0 ? "" : String(strip)); // NOLINT(cppcoreguidelines-init-variables)
   String spa = (strip < 0 ? "spa" : String("spa/") + String(strip)); // NOLINT(cppcoreguidelines-init-variables)
   String res(""); // NOLINT(cppcoreguidelines-init-variables)
   res += String(R"(<h1>)") + (strip < 0 ? String("Global ") + SYSTEM_NAME : String(STRIP_SETTINGS[strip].STRIP_NAME)) + R"(</h1>)";
+  res += String("<p>Version: ") + FIRMWARE_FLAVOUR + " " + FIRMWARE_VERSION + " Persistence Version: " + String(CONFIG_VERSION) + "</p>";
   res += R"(<form action="/{{STRIP}}" method="post">)";
   res += String("<p>") + numInput("On", "on", 0, 1, settings.on) + numInput("Mode", "mode", 0, NUM_MODES - 1, settings.mode) + numInput("OnOff Mode", "onoffmode", 0, ONOFFMODE_LAST - 1, settings.onoffmode) + "</p>";
   res +=         "<p>" + numInput("Color Index", "colidx", 0, NUM_PALETTE - 1, settings.colidx) + "</p>";
@@ -87,6 +91,10 @@ static String formBody(const Settings &settings, int8_t strip) {
   res +=         "<p>" + numInput("Cycle", "cycle", 0, 60000, settings.cycle) + "</p>";
   res +=         "<p>" + numInput("Rise", "rise", 0, 10000, settings.rise);
   res +=                 numInput("Fall", "fall", 0, 10000, settings.fall) + "</p>";
+  res +=         "<p>" + numInput("MQTT enabled", "mqttena", 0, 1, settings.mqttEnabled) + "</p>";
+  res +=         "<p>" + strInput("MQTT server", "mqttsrv", sizeof(settings.mqttServer), settings.mqttServer) + "</p>";
+  res +=         "<p>" + strInput("MQTT user", "mqttuser", sizeof(settings.mqttUser), settings.mqttUser) + "</p>";
+  res +=         "<p>" + strInput("MQTT password", "mqttpwd", sizeof(settings.mqttPassword), settings.mqttPassword) + "</p>";
   res +=         "<button type=\"submit\">Set</button>";
   res +=         "</form>\r\n";
   res += R"(<p><a href="/{{STRIP}}">Reload</a></p>)";
@@ -103,9 +111,12 @@ static String formBody(const Settings &settings, int8_t strip) {
       res += R"(<p><a href="/spa/)" + String(i) + R"(">)" +  STRIP_SETTINGS[i].STRIP_NAME + R"( SPA</a></p>)";
     }
   }
-  res += R"(<form action="/setup" method="post">)";
+  res += R"(<p><form action="/setup" method="post">)";
   res += R"(<button type="submit">Reset WiFi</button>)";
-  res += "</form>\r\n";
+  res += "</form></p>\r\n";
+  res += R"(<p><form action="/reboot" method="post">)";
+  res += R"(<button type="submit">Reboot</button>)";
+  res += "</form></p>\r\n";
   res.replace("{{STRIP}}", strp);
   res.replace("{{SPA}}", spa);
   return res;
@@ -135,6 +146,15 @@ static bool extractArg32(const char *arg, uint32_t &target) {
     target = str.toInt();
     return true;
   }
+  return false;
+}
+
+static bool extractArgStr(const char *arg, char *target, uint16_t len) {
+  if (server.hasArg(arg)) {
+    String str = server.arg(arg); // NOLINT(cppcoreguidelines-init-variables)
+    strcpy(target, str.substring(0, len - 1).c_str());
+    return true;
+  } 
   return false;
 }
 
@@ -172,6 +192,10 @@ static void extractArgs(Settings &settings, State &state) {
   }
   extractArg32("rise", settings.rise);
   extractArg32("fall", settings.fall);
+  extractArg8("mqttena", settings.mqttEnabled);
+  extractArgStr("mqttsrv", settings.mqttServer, sizeof (settings.mqttServer));
+  extractArgStr("mqttuser", settings.mqttUser, sizeof (settings.mqttUser));
+  extractArgStr("mqttpwd", settings.mqttPassword, sizeof (settings.mqttPassword));
   processSettings(settings, state, wasOn);
 }
 
@@ -204,6 +228,10 @@ static void handleApiGet(const Settings &settings, const State &state, const Eff
   jsSettings["cycle"] = settings.cycle;
   jsSettings["rise"] = settings.rise;
   jsSettings["fall"] = settings.fall;
+  jsSettings["mqttena"] = settings.mqttEnabled;
+  jsSettings["mqttsrv"] = settings.mqttServer;
+  jsSettings["mqttuser"] = settings.mqttUser;
+  jsSettings["mqttpwd"] = settings.mqttPassword;
   
   jsState["riseStart"] = state.riseStart;
   jsState["riseStop"] = state.riseStop;
@@ -225,7 +253,6 @@ static void handleApiGet(const Settings &settings, const State &state, const Eff
     col["g"] = palentry.green;
     col["b"] = palentry.blue;
   }
-
 
   String jsonString; // NOLINT(cppcoreguidelines-init-variables)
   serializeJson(jsonDocument, jsonString);
@@ -287,6 +314,21 @@ static void extractSettings(Settings &settings, const JsonObject &jsSettings, co
     }
     if (jsSettings.containsKey("onoffmode")) {
       settings.onoffmode = jsSettings["onoffmode"];
+    }
+    if (jsSettings.containsKey("mqttena")) {
+      settings.mqttEnabled = jsSettings["mqttena"];
+    }
+    if (jsSettings.containsKey("mqttsrv")) {
+      String str = jsSettings["mqttsrv"];
+      strcpy(settings.mqttServer, str.substring(0, sizeof(settings.mqttServer) - 1).c_str());
+    }
+    if (jsSettings.containsKey("mqttuser")) {
+      String str = jsSettings["mqttuser"];
+      strcpy(settings.mqttUser, str.substring(0, sizeof(settings.mqttUser) - 1).c_str());
+    }
+    if (jsSettings.containsKey("mqttpwd")) {
+      String str = jsSettings["mqttpwd"];
+      strcpy(settings.mqttPassword, str.substring(0, sizeof(settings.mqttPassword) - 1).c_str());
     }
 }
 
@@ -364,14 +406,20 @@ static void handleSpa(Settings &settings, State &state, const StripSettings &str
   sendResult(indexData);
 }
 
-static void handleSetupRedir() {
+static void handleRedirToRoot() {
   server.sendHeader("location", "/");
   server.send(HTTP_REDIRECT, "application/text", "redirect to root");
 }
 
 static void handleSetup() {
-  handleSetupRedir();
+  handleRedirToRoot();
   startWiFiPortal();
+}
+
+
+static void handleReboot() {
+  handleRedirToRoot();
+  ESP.restart();
 }
 
 
@@ -392,7 +440,9 @@ void initServer(Settings *settings, State *state, Led **led, Effects **effects) 
   });
   server.on("/leds", HTTP_GET, [=]() { handleLedsGet(*led[0]); });
   server.on("/setup", HTTP_POST, handleSetup);
-  server.on("/setup", HTTP_GET, handleSetupRedir);
+  server.on("/setup", HTTP_GET, handleRedirToRoot);
+  server.on("/reboot", HTTP_POST, handleReboot);
+  server.on("/reboot", HTTP_GET, handleRedirToRoot);
   Serial.println(String("Setting up ") + String(NUM_STRIPS) + " strip routes");
   for (uint8_t i = 0; i < NUM_STRIPS; i++) {
     String strip(i); // NOLINT(cppcoreguidelines-init-variables)
