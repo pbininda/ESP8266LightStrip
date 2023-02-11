@@ -12,6 +12,9 @@
 #include "values.h"
 #include "version.h"
 
+static uint16_t JSON_DOCUMENT_CAPACITY = 4000;
+static uint16_t JSON_DOCUMENT_CAPACITY_LED = 5600;
+
 static uint16_t briLevels[] = {4, 16, 64, 256}; // NOLINT
 static uint8_t NUM_BRILEVELS = (sizeof briLevels) / (sizeof briLevels[0]);
 
@@ -143,6 +146,8 @@ static void extractArgs(Settings &settings, State &state) {
   extractArg16("bri", settings.bri);
   extractArg8("bri2", settings.bri2);
   extractArg32("cycle", settings.cycle);
+  extractArg32("rise", settings.rise);
+  extractArg32("fall", settings.fall);
   uint8_t bril = 0;
   if(extractArg8("bril", bril)) {
     bril = bril % NUM_BRILEVELS;
@@ -166,7 +171,7 @@ static void handleSet(Settings &settings, State &state, const Led &led, const Ef
 }
 
 static void handleApiGet(const Settings &settings, const State &state, const Effects &effects) {
-  DynamicJsonDocument jsonDocument(2536);
+  DynamicJsonDocument jsonDocument(JSON_DOCUMENT_CAPACITY);
   JsonObject jsRoot = jsonDocument.to<JsonObject>();
   JsonObject jsState = jsRoot.createNestedObject("state");  
   JsonObject jsSettings = jsRoot.createNestedObject("settings");
@@ -174,6 +179,7 @@ static void handleApiGet(const Settings &settings, const State &state, const Eff
 
   jsSettings["on"] = settings.on != 0;
   jsSettings["mode"] = settings.mode;
+  jsSettings["onoffmode"] = settings.onoffmode;
   jsSettings["colidx"] = settings.colidx;
   jsSettings["ngradient"] = settings.ngradient;
   jsSettings["bri"] = settings.bri;
@@ -238,6 +244,15 @@ static void extractSettings(Settings &settings, const JsonObject &jsSettings, co
         settings.ngradient = 1;
       }
     }
+    if(jsSettings.containsKey("rise")) {
+      settings.rise = jsSettings["rise"];
+    }
+    if(jsSettings.containsKey("fall")) {
+      settings.rise = jsSettings["fall"];
+    }
+    if(jsSettings.containsKey("cycle")) {
+      settings.rise = jsSettings["cycle"];
+    }
     if (jsSettings.containsKey("setpal")) {
       JsonObject jsSetPal = jsSettings["setpal"];
       if (jsSetPal.containsKey("idx")) {
@@ -253,12 +268,15 @@ static void extractSettings(Settings &settings, const JsonObject &jsSettings, co
     if (jsSettings.containsKey("mode")) {
       settings.mode = jsSettings["mode"];
     }
+    if (jsSettings.containsKey("onoffmode")) {
+      settings.onoffmode = jsSettings["onoffmode"];
+    }
 }
 
 static void handleApiPost(Settings &settings, State &state, const StripSettings &stripSettings, bool sendResult) {
   Serial.println(String("StackSize at start of post: ") + uxTaskGetStackHighWaterMark(NULL));
   const bool wasOn = settings.on != 0;
-  DynamicJsonDocument jsonDocument(2536);
+  DynamicJsonDocument jsonDocument(JSON_DOCUMENT_CAPACITY);
   String jsonString(server.arg("plain")); // NOLINT(cppcoreguidelines-init-variables)
   Serial.print("POST: ");
   Serial.println(jsonString);
@@ -271,6 +289,22 @@ static void handleApiPost(Settings &settings, State &state, const StripSettings 
     JsonObject root = jsonDocument.as<JsonObject>();
     JsonObject jsSettings = root["settings"];
     extractSettings(settings, jsSettings, stripSettings);
+    if (root.containsKey("palette")) {
+      JsonArray jsPalette = root["palette"];
+      uint8_t count = 0;
+      Serial.println(String("setting palette size") + (jsPalette.size()));
+      for (auto jsPalEntry: jsPalette) {
+        if (count < NUM_PALETTE) {
+          Serial.println(String("setting palette ") + count);
+          settings.palette[count].red = jsPalEntry["r"];
+          settings.palette[count].green = jsPalEntry["g"];
+          settings.palette[count].blue = jsPalEntry["b"];
+        } else {
+          break;
+        }
+        count++;
+      }
+    }
   }
   processSettings(settings, state, wasOn);
   Serial.println(String("StackSize at end of post: ") + uxTaskGetStackHighWaterMark(NULL));
@@ -280,7 +314,7 @@ static void handleApiPost(Settings &settings, State &state, const StripSettings 
 }
 
 static void handleLedsGet(const Led &led) {
-  DynamicJsonDocument jsonDocument(5536);
+  DynamicJsonDocument jsonDocument(JSON_DOCUMENT_CAPACITY_LED);
   JsonObject jsRoot = jsonDocument.to<JsonObject>();
   JsonArray jsLeds = jsRoot.createNestedArray("leds");
   for (uint16_t i = 0; i < led.stripSettings.NUM_LEDS; i ++) {
