@@ -1,7 +1,6 @@
-import os
 import subprocess
 
-Import("env", "projenv")
+Import("env")
 
 # # Dump global construction environment (for debug purpose)
 # print(env.Dump())
