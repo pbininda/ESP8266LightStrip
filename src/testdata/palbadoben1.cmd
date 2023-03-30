@@ -1,0 +1,16 @@
+call .\setpal.cmd espbadoben1 0 255 255 255
+call .\setpal.cmd espbadoben1 1 255 200 120
+call .\setpal.cmd espbadoben1 2 255 80 60
+call .\setpal.cmd espbadoben1 3 255 80 40
+call .\setpal.cmd espbadoben1 4 255 80 20
+call .\setpal.cmd espbadoben1 5 255 40 40
+call .\setpal.cmd espbadoben1 6 255 20 10
+call .\setpal.cmd espbadoben1 7 255 5 1
+call .\setpal.cmd espbadoben1 15 255 255 255
+call .\setpal.cmd espbadoben1 14 255 200 120
+call .\setpal.cmd espbadoben1 13 255 80 60
+call .\setpal.cmd espbadoben1 12 255 80 40
+call .\setpal.cmd espbadoben1 11 255 80 20
+call .\setpal.cmd espbadoben1 10 255 40 40
+call .\setpal.cmd espbadoben1 9 255 20 10
+call .\setpal.cmd espbadoben1 8 255 5 1
